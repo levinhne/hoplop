@@ -5,8 +5,6 @@ pb_data
 pb_data/**
 pb_public/assets/css/app.css.map
 
-server
-server_bin
 
 web/node_modules
 web/dist
