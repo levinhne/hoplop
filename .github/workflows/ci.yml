@@ -71,5 +71,7 @@ jobs:
           context: .
           push: ${{ github.event_name == 'push' }}
           tags: levinhne/hoplop:latest
+          build-args: |
+            VITE_POCKETBASE_URL=https://k9.levinh.io.vn
           cache-from: type=gha
           cache-to: type=gha,mode=max

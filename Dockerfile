@@ -8,6 +8,8 @@ COPY web/package.json web/package-lock.json ./
 RUN npm ci
 
 COPY web ./
+ARG VITE_POCKETBASE_URL
+ENV VITE_POCKETBASE_URL=$VITE_POCKETBASE_URL
 RUN npm run build
 
 
