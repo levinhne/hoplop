@@ -37,8 +37,10 @@ WORKDIR /app
 RUN useradd --system --uid 10001 --create-home --home-dir /app appuser
 
 COPY --from=go-builder /out/server ./server
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
 
 RUN mkdir -p /app/pb_data /app/pb_public /app/pb_hooks /app/pb_migrations \
+  && chmod +x /app/docker-entrypoint.sh \
   && chown -R appuser:appuser /app
 
 USER appuser
@@ -47,5 +49,5 @@ EXPOSE 8090
 
 VOLUME ["/app/pb_data"]
 
-ENTRYPOINT ["./server"]
+ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["serve", "--http=0.0.0.0:8090"]
