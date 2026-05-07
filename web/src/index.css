@@ -1,0 +1,154 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Dancing+Script:wght@600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 25% 98%;
+    --foreground: 20 10% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 10% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 10% 15%;
+    --primary: 156 42% 18%;
+    --primary-foreground: 40 25% 98%;
+    --secondary: 36 34% 52%;
+    --secondary-foreground: 40 25% 98%;
+    --muted: 40 10% 96%;
+    --muted-foreground: 20 5% 45%;
+    --accent: 36 34% 52%;
+    --accent-foreground: 40 25% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 40 25% 98%;
+    --border: 20 10% 90%;
+    --input: 20 10% 90%;
+    --ring: 156 42% 18%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-reunion-paper text-reunion-ink font-sans antialiased bg-paper-texture;
+  }
+}
+
+@layer components {
+  .section-container {
+    @apply max-w-6xl mx-auto px-5 sm:px-6 lg:px-8;
+  }
+
+  .page-hero {
+    @apply border-b border-reunion-gold/10 bg-white/55 py-12 md:py-16;
+  }
+
+  .content-section {
+    @apply py-12 md:py-16;
+  }
+
+  .soft-panel {
+    @apply rounded-lg border border-slate-200/70 bg-white shadow-sm;
+  }
+
+  .filter-panel {
+    @apply mb-8 space-y-5 border-b border-slate-200/70 pb-6;
+  }
+
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-sm border border-white/40 shadow-polaroid rounded-xl;
+  }
+
+  .stat-box {
+    @apply p-6 border border-slate-100 bg-white shadow-sm rounded-lg;
+  }
+
+  .eyebrow {
+    @apply text-[10px] font-bold uppercase tracking-[0.28em] text-reunion-gold mb-3 block;
+  }
+
+  .heading-hero {
+    @apply font-serif text-5xl md:text-7xl font-bold leading-[1.1] text-reunion-ink tracking-tight;
+  }
+
+  .heading-hero-italic {
+    @apply font-serif italic font-normal text-reunion-forest;
+  }
+
+  .heading-l {
+    @apply text-4xl md:text-5xl font-bold leading-tight text-reunion-ink;
+  }
+
+  .handwritten {
+    @apply font-hand text-reunion-sepia;
+  }
+
+  .btn-action {
+    @apply inline-flex items-center justify-center rounded-md px-5 py-2.5 text-sm font-bold transition active:scale-95;
+  }
+
+  .btn-forest {
+    @apply btn-action bg-reunion-forest text-white hover:bg-emerald-900;
+  }
+
+  .btn-outline {
+    @apply btn-action border border-slate-200 bg-white text-reunion-ink hover:bg-slate-50;
+  }
+
+  .journal-card {
+    @apply overflow-hidden rounded-lg bg-white border border-slate-200/70 shadow-sm transition-all hover:-translate-y-0.5 hover:border-reunion-gold/30 hover:shadow-md;
+  }
+
+  .form-control {
+    @apply w-full rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-reunion-ink outline-none transition placeholder:text-slate-300 focus:border-reunion-gold focus:ring-2 focus:ring-reunion-gold/10;
+  }
+
+  .home-marquee {
+    @apply relative overflow-hidden;
+  }
+
+  .home-marquee::before,
+  .home-marquee::after {
+    @apply pointer-events-none absolute top-0 z-10 h-full w-16 content-[''] md:w-32;
+  }
+
+  .home-marquee::before {
+    @apply left-0 bg-gradient-to-r from-reunion-paper to-transparent;
+  }
+
+  .home-marquee::after {
+    @apply right-0 bg-gradient-to-l from-reunion-paper to-transparent;
+  }
+
+  .home-marquee-track {
+    @apply flex w-max gap-5;
+    animation: home-marquee 38s linear infinite;
+  }
+
+  .home-marquee-track-reverse {
+    animation-direction: reverse;
+    animation-duration: 46s;
+  }
+
+  .home-marquee:hover .home-marquee-track {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes home-marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(-50% - 0.625rem));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-marquee-track,
+  .home-marquee-track-reverse {
+    animation: none;
+  }
+}
