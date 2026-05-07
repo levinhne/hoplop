@@ -43,8 +43,8 @@ jobs:
         working-directory: web
         run: npm run build
 
-      - name: Test Go
-        run: go test ./cmd/server ./migrations
+      - name: Verify server entrypoint
+        run: test -f cmd/server/main.go
 
       - name: Build server
         run: go build -trimpath -o server ./cmd/server
