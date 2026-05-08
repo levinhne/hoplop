@@ -72,6 +72,6 @@ jobs:
           push: ${{ github.event_name == 'push' }}
           tags: levinhne/hoplop:latest
           build-args: |
-            VITE_POCKETBASE_URL=https://giaolok9.levinh.io.vn
+            VITE_POCKETBASE_URL=https://khoa91yendong.io.vn/
           cache-from: type=gha
           cache-to: type=gha,mode=max
