@@ -1,4 +1,4 @@
-import { HeadContent, createRootRoute, Link, Outlet } from '@tanstack/react-router'
+import { HeadContent, createRootRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 import { Toaster } from '@/components/ui/toaster'
 import { useState, useEffect } from 'react'
@@ -16,6 +16,7 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
 
   // Close menu on navigation
   const closeMenu = () => setIsMenuOpen(false)
@@ -34,21 +35,21 @@ function RootComponent() {
       <DocumentHead />
       <header className="fixed top-0 z-50 w-full bg-reunion-paper/90 backdrop-blur-md border-b border-reunion-gold/10">
         <div className="section-container">
-          <div className="flex h-20 md:h-24 items-center justify-between">
+          <div className="flex h-20 items-center justify-between">
             {/* Logo area */}
-            <Link to="/" onClick={closeMenu} className="group flex items-center gap-3 md:gap-4">
-              <div className="flex flex-col border-l-4 border-reunion-forest pl-3 md:pl-4 py-1 transition-transform group-hover:scale-[1.02]">
+            <Link to="/" onClick={closeMenu} className="group flex items-center gap-3">
+              <div className="flex flex-col border-l-[3px] border-reunion-forest py-0.5 pl-3 transition-transform group-hover:scale-[1.02]">
                 <span className="font-serif text-lg md:text-2xl font-bold leading-none text-reunion-ink tracking-tighter">
                   GIAO LỘ <span className="text-reunion-forest">KHỐI 9</span>
                 </span>
-                <span className="font-hand text-reunion-gold text-sm md:text-lg leading-none mt-1 opacity-80">
+                <span className="font-hand text-reunion-gold text-sm md:text-lg leading-none mt-0.5 opacity-80">
                   Nơi những con đường riêng gặp lại
                 </span>
               </div>
             </Link>
             
             {/* Navigation - Desktop */}
-            <nav className="hidden lg:flex items-center gap-10">
+            <nav className="hidden lg:flex items-center gap-8">
               <NavLink to="/members">Bạn bè</NavLink>
               <NavLink to="/teachers">Thầy cô</NavLink>
               <NavLink to="/gallery">Kỷ niệm</NavLink>
@@ -56,7 +57,7 @@ function RootComponent() {
             </nav>
 
             {/* Action Area */}
-            <div className="flex items-center gap-4 md:gap-8">
+            <div className="flex items-center gap-4 md:gap-6">
               <Link to="/rsvp" className="hidden sm:inline-flex items-center justify-center border-2 border-reunion-forest px-6 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-reunion-forest transition-all hover:bg-reunion-forest hover:text-white active:scale-95">
                 Tham gia
               </Link>
@@ -64,7 +65,7 @@ function RootComponent() {
               {/* Mobile menu trigger */}
               <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="inline-flex lg:hidden p-2 text-reunion-forest transition-colors hover:bg-reunion-forest/5 rounded-md"
+                className="inline-flex rounded-md p-2 text-reunion-forest transition-colors hover:bg-reunion-forest/5 lg:hidden"
               >
                 {isMenuOpen ? <CloseIcon className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
@@ -94,8 +95,10 @@ function RootComponent() {
         </nav>
       </div>
 
-      <main className="flex-1 pt-20 md:pt-24">
-        <Outlet />
+      <main className="flex-1 overflow-hidden pt-20">
+        <div key={pathname} className="page-transition">
+          <Outlet />
+        </div>
       </main>
 
       <footer className="bg-reunion-forest text-reunion-paper py-12 md:py-14 relative overflow-hidden">
@@ -140,7 +143,7 @@ function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
   return (
     <Link 
       to={to} 
-      className="group relative py-1 text-[11px] font-bold uppercase tracking-[0.25em] text-reunion-ink/60 transition-colors hover:text-reunion-forest [&.active]:text-reunion-forest"
+      className="group relative py-0.5 text-[11px] font-bold uppercase tracking-[0.25em] text-reunion-ink/60 transition-colors hover:text-reunion-forest [&.active]:text-reunion-forest"
     >
       {children}
       <span className="absolute -bottom-1 left-0 h-0.5 w-0 bg-reunion-gold transition-all duration-300 group-hover:w-full group-[.active]:w-full" />

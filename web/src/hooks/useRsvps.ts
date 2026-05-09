@@ -7,7 +7,7 @@ export interface CreateRsvpInput {
   class_year?: string;
   contact: string;
   status: RsvpStatus;
-  guest_count: number;
+  facebook_url?: string;
   note?: string;
 }
 

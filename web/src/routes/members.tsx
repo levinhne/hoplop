@@ -1,21 +1,14 @@
 import { useMemo, useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link, Outlet, useMatchRoute } from '@tanstack/react-router'
 import { useClasses } from '@/hooks/useClasses'
 import { useMembers } from '@/hooks/useMembers'
 import { getFileUrl } from '@/lib/pocketbase'
 import { getMemberClassName } from '@/lib/members'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription,
-  DialogTitle, 
-  DialogTrigger 
-} from '@/components/ui/dialog'
-import { MapPin, Phone, MessageCircle, Search, UsersRound } from 'lucide-react'
+import { Search, UsersRound } from 'lucide-react'
 import type { Member } from '@/types'
-import { normalizeSearch, normalizeText } from '@/lib/utils'
+import { normalizeSearch } from '@/lib/utils'
 import { seo } from '@/lib/seo'
 
 export const Route = createFileRoute('/members')({
@@ -29,10 +22,12 @@ export const Route = createFileRoute('/members')({
 })
 
 function MembersPage() {
+  const matchRoute = useMatchRoute()
   const { data: members, isLoading, error } = useMembers()
   const { data: classGroups, isLoading: isLoadingClasses } = useClasses()
   const [selectedClass, setSelectedClass] = useState('Tất cả')
   const [searchTerm, setSearchTerm] = useState('')
+  const isDetailRoute = Boolean(matchRoute({ to: '/members/$memberId' }))
 
   const classes = useMemo(() => {
     const uniqueClasses = new Set<string>()
@@ -62,6 +57,10 @@ function MembersPage() {
       return matchesClass && matchesName
     })
   }, [members, searchTerm, selectedClass])
+
+  if (isDetailRoute) {
+    return <Outlet />
+  }
 
   if (error) {
     return (
@@ -186,89 +185,39 @@ function MembersPage() {
 function MemberCard({ member }: { member: Member }) {
   const thumbUrl = getFileUrl('members', member.id, member.thumb)
   const className = getMemberClassName(member, 'Lớp 9A')
-  const bio = normalizeText(member.bio) || 'Chưa có thông tin giới thiệu.'
   const memberInitial = member.name.trim().substring(0, 1) || 'B'
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <button className="journal-card group cursor-pointer border-2 border-slate-50 text-left">
-          <div className="aspect-[4/5] bg-slate-100 relative overflow-hidden">
-            {thumbUrl ? (
-              <img 
-                src={thumbUrl} 
-                alt={member.name} 
-                className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-6xl font-serif font-bold text-slate-200 uppercase">
-                {memberInitial}
-              </div>
-            )}
-            <div className="absolute top-4 right-4 px-2 py-1 rounded-none bg-white/90 backdrop-blur shadow-sm text-[8px] font-bold text-reunion-forest uppercase tracking-widest border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
-              Chi tiết
-            </div>
+    <Link
+      to="/members/$memberId"
+      params={{ memberId: member.id }}
+      className="journal-card group block cursor-pointer border-2 border-slate-50 text-left"
+    >
+      <div className="aspect-[4/5] bg-slate-100 relative overflow-hidden">
+        {thumbUrl ? (
+          <img
+            src={thumbUrl}
+            alt={member.name}
+            className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-6xl font-serif font-bold text-slate-200 uppercase">
+            {memberInitial}
           </div>
-          <div className="p-6 space-y-2">
-            <h3 className="font-serif text-lg font-bold text-reunion-ink group-hover:text-reunion-forest transition-colors">
-              {member.name}
-            </h3>
-            <p className="text-[10px] text-reunion-gold font-bold uppercase tracking-widest">
-              {className}
-            </p>
-          </div>
-        </button>
-      </DialogTrigger>
-
-      <DialogContent className="max-w-2xl overflow-hidden rounded-xl border-none p-0 shadow-2xl">
-        <div className="grid grid-cols-1 md:grid-cols-2">
-          <div className="aspect-[4/5] md:aspect-auto h-full">
-            {thumbUrl ? (
-              <img src={thumbUrl} alt={member.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-slate-100 flex items-center justify-center text-8xl font-serif font-bold text-slate-200">
-                {memberInitial}
-              </div>
-            )}
-          </div>
-          <div className="flex flex-col justify-center space-y-5 p-7 md:p-8">
-            <div className="space-y-3">
-              <span className="eyebrow">{className}</span>
-              <DialogTitle className="font-serif text-3xl font-bold text-reunion-ink md:text-4xl">
-                {member.name}
-              </DialogTitle>
-              <DialogDescription className="sr-only">
-                Thông tin liên hệ và giới thiệu của {member.name}
-              </DialogDescription>
-              <div className="w-12 h-1 bg-reunion-gold"></div>
-            </div>
-
-            <div className="space-y-4 text-slate-600">
-              {member.location && (
-                <div className="flex items-center gap-3 text-sm">
-                  <MapPin className="w-4 h-4 text-reunion-gold" />
-                  <span>Hiện tại ở: {member.location}</span>
-                </div>
-              )}
-              {member.phone && (
-                <div className="flex items-center gap-3 text-sm">
-                  <Phone className="w-4 h-4 text-reunion-gold" />
-                  <span>SĐT: {member.phone}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="relative">
-              <MessageCircle className="absolute -top-4 -left-4 w-8 h-8 text-reunion-gold/10" />
-              <p className="font-serif italic text-slate-500 leading-relaxed pl-2">
-                "{bio}"
-              </p>
-            </div>
-
-          </div>
+        )}
+        <div className="absolute top-4 right-4 px-2 py-1 rounded-none bg-white/90 backdrop-blur shadow-sm text-[8px] font-bold text-reunion-forest uppercase tracking-widest border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
+          Chi tiết
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+      <div className="p-6 space-y-2">
+        <h3 className="font-serif text-lg font-bold text-reunion-ink group-hover:text-reunion-forest transition-colors">
+          {member.name}
+        </h3>
+        <p className="text-[10px] text-reunion-gold font-bold uppercase tracking-widest">
+          {className}
+        </p>
+      </div>
+    </Link>
   )
 }
 

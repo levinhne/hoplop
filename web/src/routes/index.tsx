@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -18,6 +19,17 @@ import { useTeachers } from '@/hooks/useTeachers'
 import { seo } from '@/lib/seo'
 import { ArrowRight, MessageSquareQuote, PenLine } from 'lucide-react'
 import type { Feeling, Member, Teacher } from '@/types'
+
+const heroTypingLines = [
+  'Ngày ấy chúng ta ngồi chung một lớp.',
+  'Tiếng trống năm ấy vẫn còn vang đâu đó trong tim.',
+  'Có những người bạn, lâu không gặp nhưng chưa từng xa.',
+  'Mỗi nụ cười hôm nay là một mảnh thanh xuân quay về.',
+  'Gặp lại không chỉ để nhớ, mà để thương nhau thêm một lần nữa.',
+  'Có một thời áo trắng, đi qua rồi vẫn sáng trong ký ức.',
+  'Sân trường cũ, hàng ghế cũ, và những cái tên chưa bao giờ cũ.',
+  'Gặp lại nhau để biết rằng, năm tháng đã đi qua rất dịu dàng.',
+]
 
 export const Route = createFileRoute('/')({
   head: () => ({
@@ -40,109 +52,110 @@ function HomeComponent() {
   const previewTeachers = teachers?.slice(0, 4) ?? []
   const latestFeelings = feelings?.slice(0, 12) ?? []
   const sliderImages = gallery?.slice(0, 6) ?? []
+  const typedHeroLine = useTypingLoop(heroTypingLines)
+  const showHeroActions = useShowAfterScrollRatio(1 / 5)
 
-  const autoplayPlugin = Autoplay({ delay: 4000, stopOnInteraction: false })
+  const autoplayPlugin = useMemo(() => Autoplay({ delay: 4000, stopOnInteraction: false }), [])
 
   return (
     <div className="flex flex-col">
-      <section className="page-hero relative overflow-hidden">
-        <div className="section-container grid grid-cols-1 items-center gap-10 lg:grid-cols-12 md:gap-12">
-          <div className="relative z-10 space-y-6 md:space-y-8 lg:col-span-6">
+      <section className="home-hero relative overflow-hidden">
+        <div className="absolute inset-0 bg-reunion-forest">
+          <Carousel
+            plugins={[autoplayPlugin]}
+            className="h-full w-full [&>div]:h-full"
+            opts={{
+              loop: true,
+            }}
+          >
+            <CarouselContent className="ml-0 h-full">
+              {isLoadingGallery ? (
+                <CarouselItem className="h-full basis-full pl-0">
+                  <Skeleton className="h-full w-full rounded-none bg-reunion-forest/80" />
+                </CarouselItem>
+              ) : sliderImages.length > 0 ? (
+                sliderImages.map((item) => (
+                  <CarouselItem key={item.id} className="relative h-full basis-full pl-0">
+                    <img
+                      src={getFileUrl('gallery', item.id, item.image)}
+                      alt={item.caption || 'Kỷ niệm'}
+                      className="h-full w-full object-cover opacity-80"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-reunion-forest/95 via-reunion-forest/68 to-reunion-ink/30" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-reunion-ink/65 via-transparent to-reunion-ink/25" />
+                  </CarouselItem>
+                ))
+              ) : (
+                <CarouselItem className="relative h-full basis-full overflow-hidden bg-reunion-forest pl-0">
+                  <div className="pointer-events-none absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-reunion-forest via-reunion-ink to-reunion-wine/80" />
+                </CarouselItem>
+              )}
+            </CarouselContent>
+          </Carousel>
+        </div>
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-16 bg-gradient-to-t from-reunion-paper/35 to-transparent" />
+
+        <div className="section-container relative z-20 flex min-h-[100svh] flex-col justify-center py-20 md:py-24">
+          <div className="max-w-4xl space-y-6 md:space-y-8">
             <div>
               <div className="mb-4 flex items-center gap-3">
                 <span className="h-px w-6 md:w-8 bg-reunion-gold"></span>
-                <span className="eyebrow mb-0 text-[10px] md:text-[11px]">Hành trình hồi ức</span>
+                <span className="eyebrow mb-0 text-[10px] text-reunion-gold md:text-[11px]">Hành trình hồi ức</span>
               </div>
-              <h1 className="heading-hero text-4xl md:text-5xl lg:text-6xl">
+              <h1 className="heading-hero max-w-3xl text-4xl text-white drop-shadow-lg md:text-6xl lg:text-7xl">
                 Gặp lại để nhớ, <br />
-                <span className="heading-hero-italic">để kể, để cười</span> <br />
+                <span className="heading-hero-italic text-reunion-gold">để kể, để cười</span> <br />
                 như ngày xưa.
               </h1>
             </div>
 
-            <p className="max-w-xl text-base md:text-lg font-serif italic leading-relaxed text-slate-500">
+            <p className="max-w-2xl text-base font-serif italic leading-relaxed text-white/80 md:text-xl">
               Một không gian nhỏ để chúng mình cùng lật lại những trang lưu bút,
               tìm lại nụ cười của bạn bè và ánh mắt hiền từ của thầy cô năm ấy.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 pt-2 md:pt-4">
-              <Button asChild className="h-12 rounded-none bg-reunion-forest px-7 text-xs font-bold uppercase tracking-widest text-white transition-all hover:translate-x-1 hover:bg-emerald-900">
+            <div className="hero-typing min-h-[6.75rem] max-w-3xl font-serif text-2xl font-semibold italic leading-snug text-white md:min-h-[6.5rem] md:text-4xl">
+              <span>{typedHeroLine}</span>
+              <span className="hero-typing-caret" aria-hidden="true" />
+            </div>
+
+            <div
+              className={`flex flex-col gap-4 pt-2 transition-all duration-700 ease-out sm:flex-row md:pt-3 ${
+                showHeroActions
+                  ? 'translate-y-0 opacity-100'
+                  : 'pointer-events-none translate-y-5 opacity-0'
+              }`}
+              aria-hidden={!showHeroActions}
+            >
+              <Button asChild className="h-12 rounded-none bg-reunion-gold px-7 text-xs font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:translate-x-1 hover:bg-[#9a7947]">
                 <Link to="/members">Xem thành viên</Link>
               </Button>
-              <Button asChild variant="outline" className="h-12 rounded-none border-2 border-reunion-forest px-7 text-xs font-bold uppercase tracking-widest text-reunion-forest transition-all hover:bg-reunion-forest hover:text-white">
+              <Button asChild variant="outline" className="h-12 rounded-none border-2 border-white/80 bg-white/10 px-7 text-xs font-bold uppercase tracking-widest text-white backdrop-blur-sm transition-all hover:bg-white hover:text-reunion-forest">
                 <Link to="/feelings">Viết lời nhắn</Link>
               </Button>
             </div>
 
-            <div className="flex flex-wrap gap-5 pt-4 md:gap-8 md:pt-6">
-              <HeroStat value={stats?.membersCount?.toString() || '0'} label="Thành viên" isLoading={isLoadingStats} />
-              <HeroDivider />
-              <HeroStat value={stats?.teachersCount?.toString() || '0'} label="Thầy cô" isLoading={isLoadingStats} />
-              <HeroDivider />
-              <HeroStat value={stats?.rsvpsCount?.toString() || '0'} label="Xác nhận" isLoading={isLoadingStats} />
-            </div>
-          </div>
-
-          <div className="relative lg:col-span-6">
-            <div className="relative z-10 flex min-h-[340px] md:min-h-[500px] flex-col overflow-hidden rounded-lg border-8 md:border-[10px] border-white bg-reunion-forest shadow-xl">
-              <Carousel
-                plugins={[autoplayPlugin]}
-                className="h-full w-full"
-                opts={{
-                  loop: true,
-                }}
-              >
-                <CarouselContent className="h-[324px] md:h-[480px]">
-                  {isLoadingGallery ? (
-                    <CarouselItem className="relative h-full w-full bg-white">
-                      <Skeleton className="h-full w-full rounded-none" />
-                    </CarouselItem>
-                  ) : sliderImages.length > 0 ? (
-                    sliderImages.map((item) => (
-                      <CarouselItem key={item.id} className="relative h-full w-full">
-                        <img
-                          src={getFileUrl('gallery', item.id, item.image)}
-                          alt={item.caption || 'Kỷ niệm'}
-                          className="h-full w-full object-cover grayscale-[0.2] transition-transform ease-linear hover:scale-110"
-                          style={{ transitionDuration: '4s' }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-reunion-forest/80 via-transparent to-transparent" />
-                        <div className="absolute bottom-6 left-6 right-6 md:bottom-8 md:left-8 md:right-8">
-                          <p className="font-serif text-xs md:text-sm italic leading-relaxed text-white/90 line-clamp-3 md:line-clamp-none">
-                            {item.caption || "Có những mùa hè không bao giờ kết thúc trong tim mỗi chúng ta."}
-                          </p>
-                        </div>
-                      </CarouselItem>
-                    ))
-                  ) : (
-                    <CarouselItem className="relative h-full w-full bg-reunion-forest p-7 md:p-8 text-white">
-                      <div className="pointer-events-none absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
-                      <div className="relative z-10 flex h-full flex-col justify-end space-y-4 md:space-y-6">
-                        <div className="h-1 w-12 md:w-16 bg-reunion-gold" />
-                        <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-reunion-gold">Album kỷ niệm</span>
-                        <h3 className="text-3xl md:text-5xl font-serif font-bold italic leading-tight">
-                          Học trò <br /> năm ấy
-                        </h3>
-                        <p className="max-w-xs text-xs md:text-sm font-serif italic leading-relaxed opacity-80">
-                          "Có những mùa hè không bao giờ kết thúc trong tim mỗi chúng ta."
-                        </p>
-                        <AvatarStack members={previewMembers} total={stats?.membersCount ?? 0} />
-                      </div>
-                    </CarouselItem>
-                  )}
-                </CarouselContent>
-              </Carousel>
-
-              <div className="absolute top-4 right-4 md:top-6 md:right-6 z-20 flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 md:px-4 md:py-1.5 text-[8px] md:text-[9px] font-bold uppercase tracking-widest text-white backdrop-blur-md">
-                <div className="h-1.5 w-1.5 rounded-full bg-reunion-gold animate-pulse" />
-                Live Memories
-              </div>
+            <div
+              className={`flex flex-wrap gap-5 pt-3 transition-all duration-700 ease-out md:gap-8 md:pt-5 ${
+                showHeroActions
+                  ? 'translate-y-0 opacity-100'
+                  : 'pointer-events-none translate-y-5 opacity-0'
+              }`}
+              aria-hidden={!showHeroActions}
+            >
+              <HeroStat value={stats?.membersCount?.toString() || '0'} label="Thành viên" isLoading={isLoadingStats} variant="light" />
+              <HeroDivider variant="light" />
+              <HeroStat value={stats?.teachersCount?.toString() || '0'} label="Thầy cô" isLoading={isLoadingStats} variant="light" />
+              <HeroDivider variant="light" />
+              <HeroStat value={stats?.rsvpsCount?.toString() || '0'} label="Xác nhận" isLoading={isLoadingStats} variant="light" />
             </div>
           </div>
         </div>
       </section>
 
-      <section className="bg-white content-section">
+      <section className="border-b border-reunion-gold/10 bg-reunion-paper content-section">
         <div className="section-container">
           <SectionHeader
             eyebrow="Danh sách"
@@ -267,21 +280,86 @@ function HomeComponent() {
   )
 }
 
-function HeroStat({ value, label, isLoading }: { value: string; label: string; isLoading?: boolean }) {
+function useTypingLoop(lines: string[]) {
+  const [lineIndex, setLineIndex] = useState(0)
+  const [charIndex, setCharIndex] = useState(0)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  useEffect(() => {
+    const currentLine = lines[lineIndex] ?? ''
+    const isLineComplete = !isDeleting && charIndex === currentLine.length
+    const isLineDeleted = isDeleting && charIndex === 0
+    const delay = isLineComplete ? 1800 : isDeleting ? 28 : 55
+
+    const timeout = window.setTimeout(() => {
+      if (isLineComplete) {
+        setIsDeleting(true)
+        return
+      }
+
+      if (isLineDeleted) {
+        setIsDeleting(false)
+        setLineIndex((current) => (current + 1) % lines.length)
+        return
+      }
+
+      setCharIndex((current) => current + (isDeleting ? -1 : 1))
+    }, delay)
+
+    return () => window.clearTimeout(timeout)
+  }, [charIndex, isDeleting, lineIndex, lines])
+
+  return lines[lineIndex]?.slice(0, charIndex) ?? ''
+}
+
+function useShowAfterScrollRatio(ratio: number) {
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const updateVisibility = () => {
+      setIsVisible(window.scrollY >= window.innerHeight * ratio)
+    }
+
+    updateVisibility()
+    window.addEventListener('scroll', updateVisibility, { passive: true })
+    window.addEventListener('resize', updateVisibility)
+
+    return () => {
+      window.removeEventListener('scroll', updateVisibility)
+      window.removeEventListener('resize', updateVisibility)
+    }
+  }, [ratio])
+
+  return isVisible
+}
+
+function HeroStat({
+  value,
+  label,
+  isLoading,
+  variant = 'default',
+}: {
+  value: string
+  label: string
+  isLoading?: boolean
+  variant?: 'default' | 'light'
+}) {
+  const isLight = variant === 'light'
+
   return (
     <div>
       {isLoading ? (
-        <Skeleton className="mb-2 h-10 w-16 rounded-md" />
+        <Skeleton className="mb-2 h-10 w-16 rounded-md bg-white/25" />
       ) : (
-        <div className="text-3xl md:text-4xl font-serif font-bold text-reunion-forest">{value}</div>
+        <div className={`text-3xl md:text-4xl font-serif font-bold ${isLight ? 'text-white' : 'text-reunion-forest'}`}>{value}</div>
       )}
-      <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">{label}</div>
+      <div className={`mt-1 text-[10px] font-bold uppercase tracking-[0.2em] ${isLight ? 'text-white/65' : 'text-slate-400'}`}>{label}</div>
     </div>
   )
 }
 
-function HeroDivider() {
-  return <div className="hidden h-12 w-px bg-slate-100 sm:block" />
+function HeroDivider({ variant = 'default' }: { variant?: 'default' | 'light' }) {
+  return <div className={`hidden h-12 w-px sm:block ${variant === 'light' ? 'bg-white/25' : 'bg-slate-100'}`} />
 }
 
 function SummaryItem({ value, label, isLoading }: { value: string; label: string; isLoading?: boolean }) {
@@ -468,26 +546,6 @@ function FeelingPreviewCard({ feeling }: { feeling: Feeling }) {
         "{normalizeText(feeling.content)}"
       </p>
     </Link>
-  )
-}
-
-function AvatarStack({ members, total }: { members: Member[]; total: number }) {
-  return (
-    <div className="flex -space-x-3 pt-4">
-      {members.slice(0, 4).map((member) => {
-        const thumbUrl = getFileUrl('members', member.id, member.thumb)
-        const initial = member.name.trim().substring(0, 1) || 'B'
-
-        return (
-          <div key={member.id} className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-2 border-reunion-forest bg-slate-200 text-sm font-bold text-reunion-forest">
-            {thumbUrl ? <img src={thumbUrl} alt={member.name} className="h-full w-full object-cover" /> : initial}
-          </div>
-        )
-      })}
-      <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-reunion-forest bg-reunion-gold text-xs font-bold text-white">
-        +{Math.max(total - members.length, 0)}
-      </div>
-    </div>
   )
 }
 

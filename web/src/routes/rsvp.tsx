@@ -27,10 +27,10 @@ const statusLabels: Record<RsvpStatus, string> = {
 
 const rsvpSchema = z.object({
   full_name: z.string().min(2, 'Vui lòng nhập họ tên.'),
-  class_year: z.string().max(120, 'Lớp/niên khóa quá dài.').optional(),
+  class_year: z.string().max(120, 'Tên lớp quá dài.').optional(),
   contact: z.string().min(6, 'Vui lòng nhập số điện thoại hoặc Zalo.'),
+  facebook_url: z.string().trim().max(300, 'Link Facebook quá dài.').refine((value) => !value || isValidUrl(value), 'Vui lòng nhập link Facebook hợp lệ.').optional(),
   status: z.enum(['attending', 'maybe', 'not_attending']),
-  guest_count: z.number().int('Số người đi cùng phải là số nguyên.').min(0, 'Không thể nhỏ hơn 0.').max(20, 'Vui lòng liên hệ BTC nếu đi cùng hơn 20 người.'),
   location: z.string().max(200, 'Nơi ở hiện tại quá dài.').optional(),
   bio: z.string().max(1000, 'Giới thiệu bản thân tối đa 1000 ký tự.').optional(),
   thumb: z.any().optional(),
@@ -69,8 +69,8 @@ function RsvpPage() {
       full_name: '',
       class_year: '',
       contact: '',
+      facebook_url: '',
       status: 'attending',
-      guest_count: 0,
       location: '',
       bio: '',
       note: '',
@@ -93,8 +93,8 @@ function RsvpPage() {
     formData.append('full_name', values.full_name)
     if (values.class_year) formData.append('class_year', values.class_year)
     formData.append('contact', values.contact)
+    if (values.facebook_url) formData.append('facebook_url', values.facebook_url)
     formData.append('status', values.status)
-    formData.append('guest_count', values.guest_count.toString())
     if (values.location) formData.append('location', values.location)
     if (values.bio) formData.append('bio', values.bio)
     if (values.note) formData.append('note', values.note)
@@ -111,8 +111,8 @@ function RsvpPage() {
           full_name: '',
           class_year: '',
           contact: '',
+          facebook_url: '',
           status: 'attending',
-          guest_count: 0,
           location: '',
           bio: '',
           note: '',
@@ -196,7 +196,7 @@ function RsvpPage() {
                   <input className="form-control" placeholder="Nguyễn Văn A" {...register('full_name')} />
                 </Field>
 
-                <Field label="Lớp/niên khóa" error={errors.class_year?.message}>
+                <Field label="Lớp" error={errors.class_year?.message}>
                   {isLoadingClasses ? (
                     <Skeleton className="h-12 w-full rounded-md" />
                   ) : (
@@ -205,7 +205,7 @@ function RsvpPage() {
                       onValueChange={(value) => setValue('class_year', value, { shouldDirty: true, shouldValidate: true })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Chọn lớp/niên khóa" />
+                        <SelectValue placeholder="Chọn lớp" />
                       </SelectTrigger>
                       <SelectContent>
                         {classes?.map((classGroup) => (
@@ -230,6 +230,10 @@ function RsvpPage() {
               </div>
 
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <Field label="Link Facebook" error={errors.facebook_url?.message}>
+                  <input className="form-control" placeholder="https://facebook.com/..." {...register('facebook_url')} />
+                </Field>
+
                 <Field label="Trạng thái tham gia" error={errors.status?.message}>
                   <Select
                     value={selectedStatus}
@@ -247,19 +251,7 @@ function RsvpPage() {
                     </SelectContent>
                   </Select>
                 </Field>
-
-                <Field label="Số người đi cùng" error={errors.guest_count?.message}>
-                  <input className="form-control" type="number" min={0} max={20} {...register('guest_count', { valueAsNumber: true })} />
-                </Field>
               </div>
-
-              <Field label="Giới thiệu bản thân (Bio)" error={errors.bio?.message}>
-                <textarea
-                  className="form-control h-28 resize-none leading-relaxed"
-                  placeholder="Công việc hiện tại, sở thích, hoặc vài dòng chào hỏi bạn bè..."
-                  {...register('bio')}
-                />
-              </Field>
 
               <div className="border-t border-slate-200/70 pt-6">
                 <div className="flex flex-col items-center gap-6 sm:flex-row">
@@ -279,11 +271,19 @@ function RsvpPage() {
                     </label>
                   </div>
                   <div className="text-center sm:text-left">
-                    <h3 className="font-serif text-lg font-bold text-reunion-ink">Ảnh bạn bè</h3>
-                    <p className="text-xs text-slate-400">Ảnh dọc dùng trên card và popup trang Bạn bè.</p>
+                    <h3 className="font-serif text-lg font-bold text-reunion-ink">Ảnh của bạn</h3>
+                    <p className="text-xs text-slate-400">Ảnh dọc dùng để hiển thị trên trang Bạn bè.</p>
                   </div>
                 </div>
               </div>
+
+              <Field label="Giới thiệu bản thân (Bio)" error={errors.bio?.message}>
+                <textarea
+                  className="form-control h-28 resize-none leading-relaxed"
+                  placeholder="Công việc hiện tại, sở thích, hoặc vài dòng chào hỏi bạn bè..."
+                  {...register('bio')}
+                />
+              </Field>
 
               <Field label="Ghi chú cho BTC" error={errors.note?.message}>
                 <textarea
@@ -315,6 +315,15 @@ function previewFile(file: File, onPreview: (value: string) => void) {
     onPreview(reader.result as string)
   }
   reader.readAsDataURL(file)
+}
+
+function isValidUrl(value: string) {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
 }
 
 function isDuplicateContactError(error: unknown) {

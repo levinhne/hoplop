@@ -17,6 +17,7 @@ export interface Member {
   bio: string;
   class_ref?: string;
   phone: string;
+  facebook_url: string;
   location: string;
   is_public: boolean;
   sort_order: number;
@@ -76,6 +77,7 @@ export interface Rsvp {
   contact: string;
   status: RsvpStatus;
   guest_count: number;
+  facebook_url: string;
   note: string;
   is_approved: boolean;
   created: string;

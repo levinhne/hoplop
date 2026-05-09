@@ -1,20 +1,24 @@
-import { useMemo, useState } from 'react'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { useEffect, useMemo, useState } from 'react'
+import { createFileRoute, Link, Outlet, useMatchRoute } from '@tanstack/react-router'
 import { useTeachers } from '@/hooks/useTeachers'
 import { getFileUrl } from '@/lib/pocketbase'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription,
-  DialogTitle, 
-  DialogTrigger 
-} from '@/components/ui/dialog'
-import { Heart, BookOpen, GraduationCap, MessageSquareQuote, Search, UsersRound } from 'lucide-react'
+import { GraduationCap, Search } from 'lucide-react'
 import type { Teacher } from '@/types'
-import { normalizeSearch, normalizeText } from '@/lib/utils'
+import { normalizeSearch } from '@/lib/utils'
 import { seo } from '@/lib/seo'
+
+const tributeQuotes = [
+  'Ơn thầy cô là ngọn đèn lặng lẽ, soi chúng em qua những năm tháng đầu đời.',
+  'Có những bài học không nằm trong vở, nhưng theo chúng em đến tận hôm nay.',
+  'Một lời giảng năm xưa, một ánh mắt hiền từ, vẫn còn ấm trong ký ức.',
+  'Thầy cô gieo hạt mầm tử tế, để chúng em lớn lên bằng lòng biết ơn.',
+  'Nhờ thầy cô, những ngày vụng dại năm ấy trở thành hành trang dịu dàng.',
+  'Có những tiếng gọi bảng, nhắc lại thôi cũng thấy cả lớp học ùa về.',
+  'Thầy cô đã dạy chúng em cách lớn lên, bằng tri thức và bằng yêu thương.',
+  'Bao năm đi xa, chúng em vẫn nhớ dáng thầy cô bên bục giảng cũ.',
+]
 
 export const Route = createFileRoute('/teachers')({
   head: () => ({
@@ -27,9 +31,25 @@ export const Route = createFileRoute('/teachers')({
 })
 
 function TeachersPage() {
+  const matchRoute = useMatchRoute()
   const { data: teachers, isLoading, error } = useTeachers()
   const [selectedSubject, setSelectedSubject] = useState('Tất cả')
   const [searchTerm, setSearchTerm] = useState('')
+  const [quoteIndex, setQuoteIndex] = useState(0)
+  const [isQuoteVisible, setIsQuoteVisible] = useState(true)
+  const isDetailRoute = Boolean(matchRoute({ to: '/teachers/$teacherId' }))
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setIsQuoteVisible(false)
+      window.setTimeout(() => {
+        setQuoteIndex((current) => (current + 1) % tributeQuotes.length)
+        setIsQuoteVisible(true)
+      }, 450)
+    }, 4200)
+
+    return () => window.clearInterval(interval)
+  }, [])
 
   const subjects = useMemo(() => {
     const uniqueSubjects = new Set(
@@ -52,9 +72,9 @@ function TeachersPage() {
     })
   }, [selectedSubject, searchTerm, teachers])
 
-  const homeroomCount = useMemo(() => {
-    return teachers?.filter((teacher) => normalizeValue(teacher.period).toLowerCase().includes('chủ nhiệm')).length ?? 0
-  }, [teachers])
+  if (isDetailRoute) {
+    return <Outlet />
+  }
 
   if (error) {
     return (
@@ -84,19 +104,18 @@ function TeachersPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 lg:col-span-4">
-            <TeacherStat value={teachers?.length ?? 0} label="Thầy cô" icon={GraduationCap} isLoading={isLoading} />
-            <TeacherStat value={subjects.length > 1 ? subjects.length - 1 : 0} label="Môn học" icon={BookOpen} isLoading={isLoading} />
-            <TeacherStat value={homeroomCount} label="Chủ nhiệm" icon={UsersRound} isLoading={isLoading} />
-            <Link
-              to="/feelings"
-              className="soft-panel flex min-h-24 flex-col justify-between p-5 text-reunion-forest transition-colors hover:border-reunion-gold/50"
+          <div className="soft-panel relative overflow-hidden p-6 lg:col-span-4 md:p-7">
+            <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full border border-reunion-gold/20" />
+            <span className="mb-4 block text-[10px] font-bold uppercase tracking-[0.28em] text-reunion-gold">
+              Tri ân
+            </span>
+            <p
+              className={`min-h-[5.25rem] font-serif text-lg italic leading-relaxed text-reunion-sepia transition-all duration-500 md:min-h-[5.5rem] md:text-xl ${
+                isQuoteVisible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
+              }`}
             >
-              <MessageSquareQuote className="h-5 w-5 text-reunion-gold" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-reunion-forest">
-                Gửi lời tri ân
-              </span>
-            </Link>
+              "{tributeQuotes[quoteIndex]}"
+            </p>
           </div>
         </div>
       </section>
@@ -188,111 +207,40 @@ function TeachersPage() {
 function TeacherCard({ teacher }: { teacher: Teacher }) {
   const avatarUrl = getFileUrl('teachers', teacher.id, teacher.avatar)
   const subject = normalizeValue(teacher.subject) || 'Đang cập nhật môn học'
-  const period = normalizeValue(teacher.period) || 'Đang cập nhật giai đoạn'
-  const tribute = normalizeText(teacher.tribute) || 'Lời tri ân đang được cập nhật...'
   const teacherInitial = teacher.name.trim().substring(0, 1) || 'T'
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <button className="journal-card group cursor-pointer border-2 border-slate-50 text-left">
-          <div className="aspect-[4/5] bg-slate-100 relative overflow-hidden">
-            {avatarUrl ? (
-              <img 
-                src={avatarUrl} 
-                alt={teacher.name} 
-                className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-6xl font-serif font-bold text-slate-200 uppercase">
-                {teacherInitial}
-              </div>
-            )}
-            <div className="absolute top-4 right-4 px-2 py-1 rounded-none bg-white/90 backdrop-blur shadow-sm text-[8px] font-bold text-reunion-forest uppercase tracking-widest border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
-              Chi tiết
-            </div>
+    <Link
+      to="/teachers/$teacherId"
+      params={{ teacherId: teacher.id }}
+      className="journal-card group block cursor-pointer border-2 border-slate-50 text-left"
+    >
+      <div className="aspect-[4/5] bg-slate-100 relative overflow-hidden">
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={teacher.name}
+            className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-6xl font-serif font-bold text-slate-200 uppercase">
+            {teacherInitial}
           </div>
-          
-          <div className="p-6 space-y-2">
-            <h3 className="font-serif text-lg font-bold text-reunion-ink group-hover:text-reunion-forest transition-colors">
-              {teacher.name}
-            </h3>
-            <p className="text-[10px] text-reunion-gold font-bold uppercase tracking-widest">
-              {subject}
-            </p>
-          </div>
-        </button>
-      </DialogTrigger>
-
-      <DialogContent className="max-w-2xl overflow-hidden rounded-xl border-none p-0 shadow-2xl">
-        <div className="grid grid-cols-1 md:grid-cols-2">
-          <div className="aspect-[4/5] md:aspect-auto h-full">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt={teacher.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-slate-100 flex items-center justify-center text-8xl font-serif font-bold text-slate-200">
-                {teacherInitial}
-              </div>
-            )}
-          </div>
-          <div className="flex flex-col justify-center space-y-5 p-7 md:p-8">
-            <div className="space-y-3">
-              <span className="eyebrow">{subject}</span>
-              <DialogTitle className="font-serif text-3xl font-bold text-reunion-ink md:text-4xl">
-                {teacher.name}
-              </DialogTitle>
-              <DialogDescription className="sr-only">
-                Lời tri ân và thông tin giảng dạy của {teacher.name}
-              </DialogDescription>
-              <div className="w-12 h-1 bg-reunion-gold"></div>
-            </div>
-
-            <div className="space-y-4 text-slate-600">
-              <div className="flex items-center gap-3 text-sm">
-                <BookOpen className="w-4 h-4 text-reunion-gold" />
-                <span>Môn giảng dạy: {subject}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <GraduationCap className="w-4 h-4 text-reunion-gold" />
-                <span>Giai đoạn: {period}</span>
-              </div>
-            </div>
-
-            <div className="relative">
-              <Heart className="absolute -top-4 -left-4 w-8 h-8 text-reunion-gold/10" />
-              <p className="font-serif italic text-slate-500 leading-relaxed pl-2">
-                {quote(tribute)}
-              </p>
-            </div>
-
-          </div>
+        )}
+        <div className="absolute top-4 right-4 px-2 py-1 rounded-none bg-white/90 backdrop-blur shadow-sm text-[8px] font-bold text-reunion-forest uppercase tracking-widest border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
+          Chi tiết
         </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
+      </div>
 
-function TeacherStat({
-  value,
-  label,
-  icon: Icon,
-  isLoading,
-}: {
-  value: number
-  label: string
-  icon: typeof GraduationCap
-  isLoading?: boolean
-}) {
-  return (
-    <div className="soft-panel min-h-24 p-5">
-      <Icon className="mb-4 h-5 w-5 text-reunion-gold" />
-      {isLoading ? (
-        <Skeleton className="h-8 w-12 rounded-md" />
-      ) : (
-        <div className="font-serif text-3xl font-bold text-reunion-ink">{value}</div>
-      )}
-      <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">{label}</div>
-    </div>
+      <div className="p-6 space-y-2">
+        <h3 className="font-serif text-lg font-bold text-reunion-ink group-hover:text-reunion-forest transition-colors">
+          {teacher.name}
+        </h3>
+        <p className="text-[10px] text-reunion-gold font-bold uppercase tracking-widest">
+          {subject}
+        </p>
+      </div>
+    </Link>
   )
 }
 
@@ -314,8 +262,4 @@ function EmptyTeachers({ selectedSubject }: { selectedSubject: string }) {
 
 function normalizeValue(value?: string) {
   return value?.trim() ?? ''
-}
-
-function quote(value: string) {
-  return `"${value}"`
 }

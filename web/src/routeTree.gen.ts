@@ -15,6 +15,8 @@ import { Route as MembersRouteImport } from './routes/members'
 import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as FeelingsRouteImport } from './routes/feelings'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TeachersTeacherIdRouteImport } from './routes/teachers.$teacherId'
+import { Route as MembersMemberIdRouteImport } from './routes/members.$memberId'
 
 const TeachersRoute = TeachersRouteImport.update({
   id: '/teachers',
@@ -46,37 +48,69 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TeachersTeacherIdRoute = TeachersTeacherIdRouteImport.update({
+  id: '/$teacherId',
+  path: '/$teacherId',
+  getParentRoute: () => TeachersRoute,
+} as any)
+const MembersMemberIdRoute = MembersMemberIdRouteImport.update({
+  id: '/$memberId',
+  path: '/$memberId',
+  getParentRoute: () => MembersRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/feelings': typeof FeelingsRoute
   '/gallery': typeof GalleryRoute
-  '/members': typeof MembersRoute
+  '/members': typeof MembersRouteWithChildren
   '/rsvp': typeof RsvpRoute
-  '/teachers': typeof TeachersRoute
+  '/teachers': typeof TeachersRouteWithChildren
+  '/members/$memberId': typeof MembersMemberIdRoute
+  '/teachers/$teacherId': typeof TeachersTeacherIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/feelings': typeof FeelingsRoute
   '/gallery': typeof GalleryRoute
-  '/members': typeof MembersRoute
+  '/members': typeof MembersRouteWithChildren
   '/rsvp': typeof RsvpRoute
-  '/teachers': typeof TeachersRoute
+  '/teachers': typeof TeachersRouteWithChildren
+  '/members/$memberId': typeof MembersMemberIdRoute
+  '/teachers/$teacherId': typeof TeachersTeacherIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/feelings': typeof FeelingsRoute
   '/gallery': typeof GalleryRoute
-  '/members': typeof MembersRoute
+  '/members': typeof MembersRouteWithChildren
   '/rsvp': typeof RsvpRoute
-  '/teachers': typeof TeachersRoute
+  '/teachers': typeof TeachersRouteWithChildren
+  '/members/$memberId': typeof MembersMemberIdRoute
+  '/teachers/$teacherId': typeof TeachersTeacherIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/feelings' | '/gallery' | '/members' | '/rsvp' | '/teachers'
+  fullPaths:
+    | '/'
+    | '/feelings'
+    | '/gallery'
+    | '/members'
+    | '/rsvp'
+    | '/teachers'
+    | '/members/$memberId'
+    | '/teachers/$teacherId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/feelings' | '/gallery' | '/members' | '/rsvp' | '/teachers'
+  to:
+    | '/'
+    | '/feelings'
+    | '/gallery'
+    | '/members'
+    | '/rsvp'
+    | '/teachers'
+    | '/members/$memberId'
+    | '/teachers/$teacherId'
   id:
     | '__root__'
     | '/'
@@ -85,15 +119,17 @@ export interface FileRouteTypes {
     | '/members'
     | '/rsvp'
     | '/teachers'
+    | '/members/$memberId'
+    | '/teachers/$teacherId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FeelingsRoute: typeof FeelingsRoute
   GalleryRoute: typeof GalleryRoute
-  MembersRoute: typeof MembersRoute
+  MembersRoute: typeof MembersRouteWithChildren
   RsvpRoute: typeof RsvpRoute
-  TeachersRoute: typeof TeachersRoute
+  TeachersRoute: typeof TeachersRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -140,16 +176,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/teachers/$teacherId': {
+      id: '/teachers/$teacherId'
+      path: '/$teacherId'
+      fullPath: '/teachers/$teacherId'
+      preLoaderRoute: typeof TeachersTeacherIdRouteImport
+      parentRoute: typeof TeachersRoute
+    }
+    '/members/$memberId': {
+      id: '/members/$memberId'
+      path: '/$memberId'
+      fullPath: '/members/$memberId'
+      preLoaderRoute: typeof MembersMemberIdRouteImport
+      parentRoute: typeof MembersRoute
+    }
   }
 }
+
+interface MembersRouteChildren {
+  MembersMemberIdRoute: typeof MembersMemberIdRoute
+}
+
+const MembersRouteChildren: MembersRouteChildren = {
+  MembersMemberIdRoute: MembersMemberIdRoute,
+}
+
+const MembersRouteWithChildren =
+  MembersRoute._addFileChildren(MembersRouteChildren)
+
+interface TeachersRouteChildren {
+  TeachersTeacherIdRoute: typeof TeachersTeacherIdRoute
+}
+
+const TeachersRouteChildren: TeachersRouteChildren = {
+  TeachersTeacherIdRoute: TeachersTeacherIdRoute,
+}
+
+const TeachersRouteWithChildren = TeachersRoute._addFileChildren(
+  TeachersRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FeelingsRoute: FeelingsRoute,
   GalleryRoute: GalleryRoute,
-  MembersRoute: MembersRoute,
+  MembersRoute: MembersRouteWithChildren,
   RsvpRoute: RsvpRoute,
-  TeachersRoute: TeachersRoute,
+  TeachersRoute: TeachersRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

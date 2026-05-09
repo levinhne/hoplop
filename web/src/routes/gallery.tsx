@@ -12,7 +12,7 @@ import { getFileUrl } from '@/lib/pocketbase'
 import { useGallery } from '@/hooks/useGallery'
 import { cn } from '@/lib/utils'
 import { seo } from '@/lib/seo'
-import { Camera, ImageIcon, Images } from 'lucide-react'
+import { ImageIcon, Images } from 'lucide-react'
 import type { GalleryItem } from '@/types'
 
 type GalleryFilter = 'all' | GalleryItem['category']
@@ -79,9 +79,8 @@ function GalleryPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 lg:col-span-4">
-            <GalleryStat value={gallery?.length ?? 0} label="Ảnh công khai" icon={Images} isLoading={isLoading} />
-            <GalleryStat value={countCategories(gallery)} label="Phân loại" icon={Camera} isLoading={isLoading} />
+          <div className="lg:col-span-4">
+            <GalleryHeroPreview gallery={gallery} isLoading={isLoading} />
           </div>
         </div>
       </section>
@@ -229,26 +228,50 @@ function GallerySkeleton() {
   )
 }
 
-function GalleryStat({
-  value,
-  label,
-  icon: Icon,
+function GalleryHeroPreview({
+  gallery,
   isLoading,
 }: {
-  value: number
-  label: string
-  icon: typeof Images
+  gallery: GalleryItem[] | undefined
   isLoading?: boolean
 }) {
+  const previewItems = gallery?.slice(0, 3) ?? []
+
   return (
-    <div className="soft-panel min-h-24 p-5">
-      <Icon className="mb-4 h-5 w-5 text-reunion-gold" />
+    <div className="soft-panel overflow-hidden p-3">
       {isLoading ? (
-        <Skeleton className="h-8 w-12 rounded-md" />
+        <div className="grid grid-cols-3 gap-2">
+          {[1, 2, 3].map((item) => (
+            <Skeleton key={item} className="aspect-[3/4] rounded-md" />
+          ))}
+        </div>
+      ) : previewItems.length > 0 ? (
+        <div className="grid grid-cols-3 gap-2">
+          {previewItems.map((item, index) => (
+            <div
+              key={item.id}
+              className={cn(
+                'relative overflow-hidden rounded-md bg-slate-100 shadow-sm',
+                index === 1 ? 'mt-5 aspect-[3/4]' : 'aspect-[3/4]'
+              )}
+            >
+              <img
+                src={getFileUrl('gallery', item.id, item.image)}
+                alt={item.caption || 'Kỷ niệm'}
+                className="h-full w-full object-cover grayscale-[0.15]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-reunion-ink/45 to-transparent" />
+            </div>
+          ))}
+        </div>
       ) : (
-        <div className="font-serif text-3xl font-bold text-reunion-ink">{value}</div>
+        <div className="flex min-h-36 flex-col justify-end rounded-md bg-reunion-forest p-5 text-white">
+          <Images className="mb-4 h-6 w-6 text-reunion-gold" />
+          <p className="font-serif text-lg italic leading-relaxed">
+            Mỗi tấm ảnh là một mảnh ký ức đang chờ được đặt vào album chung.
+          </p>
+        </div>
       )}
-      <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">{label}</div>
     </div>
   )
 }
@@ -273,10 +296,4 @@ function countGallery(gallery: GalleryItem[] | undefined, category: GalleryFilte
   if (category === 'all') return gallery.length
 
   return gallery.filter((item) => item.category === category).length
-}
-
-function countCategories(gallery: GalleryItem[] | undefined) {
-  if (!gallery) return 0
-
-  return new Set(gallery.map((item) => item.category)).size
 }

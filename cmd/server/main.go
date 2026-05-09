@@ -104,6 +104,7 @@ func main() {
 
 			member.Set("name", name)
 			member.Set("phone", phone)
+			member.Set("facebook_url", e.Record.GetString("facebook_url"))
 			className := e.Record.GetString("class_year")
 			if classRecord, err := findOrCreateClass(e.App, className); err == nil && classRecord != nil {
 				member.Set("class_ref", classRecord.Id)
