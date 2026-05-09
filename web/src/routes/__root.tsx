@@ -1,7 +1,7 @@
 import { HeadContent, createRootRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 import { Toaster } from '@/components/ui/toaster'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { Menu, X as CloseIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -16,10 +16,31 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [scrollProgress, setScrollProgress] = useState(0)
   const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const isHomePage = pathname === '/'
+  const headerProgress = isHomePage && !isMenuOpen ? scrollProgress : 1
+  const isHeaderTransparent = isHomePage && headerProgress < 0.55 && !isMenuOpen
+  const headerStyle = {
+    '--nav-bg-opacity': 0.9 * headerProgress,
+    '--nav-border-opacity': 0.1 * headerProgress,
+    '--nav-shadow-opacity': 0.08 * headerProgress,
+    '--nav-blur': `${14 * headerProgress}px`,
+  } as CSSProperties
 
   // Close menu on navigation
   const closeMenu = () => setIsMenuOpen(false)
+
+  useEffect(() => {
+    const updateScrollState = () => {
+      setScrollProgress(Math.min(window.scrollY / 140, 1))
+    }
+
+    updateScrollState()
+    window.addEventListener('scroll', updateScrollState, { passive: true })
+
+    return () => window.removeEventListener('scroll', updateScrollState)
+  }, [])
 
   // Prevent scroll when menu is open
   useEffect(() => {
@@ -33,16 +54,31 @@ function RootComponent() {
   return (
     <div className="flex flex-col min-h-screen">
       <DocumentHead />
-      <header className="fixed top-0 z-50 w-full bg-reunion-paper/90 backdrop-blur-md border-b border-reunion-gold/10">
+      <header className={cn(
+        'site-header fixed top-0 z-50 w-full border-b',
+        isHomePage && 'site-header-home',
+      )} style={headerStyle}>
         <div className="section-container">
-          <div className="flex h-20 items-center justify-between">
+          <div className={cn(
+            'flex items-center justify-between transition-[height] duration-300',
+            isHeaderTransparent ? 'h-24' : 'h-20',
+          )}>
             {/* Logo area */}
             <Link to="/" onClick={closeMenu} className="group flex items-center gap-3">
-              <div className="flex flex-col border-l-[3px] border-reunion-forest py-0.5 pl-3 transition-transform group-hover:scale-[1.02]">
-                <span className="font-serif text-lg md:text-2xl font-bold leading-none text-reunion-ink tracking-tighter">
-                  GIAO LỘ <span className="text-reunion-forest">KHỐI 9</span>
+              <div className={cn(
+                'flex flex-col border-l-[3px] py-0.5 pl-3 transition-all group-hover:scale-[1.02]',
+                isHeaderTransparent ? 'border-reunion-gold' : 'border-reunion-forest',
+              )}>
+                <span className={cn(
+                  'font-serif text-lg md:text-2xl font-bold leading-none tracking-tighter transition-colors',
+                  isHeaderTransparent ? 'text-white' : 'text-reunion-ink',
+                )}>
+                  GIAO LỘ <span className={isHeaderTransparent ? 'text-reunion-gold' : 'text-reunion-forest'}>KHỐI 9</span>
                 </span>
-                <span className="font-hand text-reunion-gold text-sm md:text-lg leading-none mt-0.5 opacity-80">
+                <span className={cn(
+                  'font-hand text-sm md:text-lg leading-none mt-0.5 transition-colors',
+                  isHeaderTransparent ? 'text-white/80' : 'text-reunion-gold opacity-80',
+                )}>
                   Nơi những con đường riêng gặp lại
                 </span>
               </div>
@@ -50,22 +86,32 @@ function RootComponent() {
             
             {/* Navigation - Desktop */}
             <nav className="hidden lg:flex items-center gap-8">
-              <NavLink to="/members">Bạn bè</NavLink>
-              <NavLink to="/teachers">Thầy cô</NavLink>
-              <NavLink to="/gallery">Kỷ niệm</NavLink>
-              <NavLink to="/feelings">Lưu bút</NavLink>
+              <NavLink to="/members" inverted={isHeaderTransparent}>Bạn bè</NavLink>
+              <NavLink to="/teachers" inverted={isHeaderTransparent}>Thầy cô</NavLink>
+              <NavLink to="/gallery" inverted={isHeaderTransparent}>Kỷ niệm</NavLink>
+              <NavLink to="/feelings" inverted={isHeaderTransparent}>Lưu bút</NavLink>
             </nav>
 
             {/* Action Area */}
             <div className="flex items-center gap-4 md:gap-6">
-              <Link to="/rsvp" className="hidden sm:inline-flex items-center justify-center border-2 border-reunion-forest px-6 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-reunion-forest transition-all hover:bg-reunion-forest hover:text-white active:scale-95">
+              <Link to="/rsvp" className={cn(
+                'hidden sm:inline-flex items-center justify-center border-2 px-5 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] transition-all active:scale-95',
+                isHeaderTransparent
+                  ? 'border-white/80 text-white hover:border-white hover:bg-white hover:text-reunion-forest'
+                  : 'border-reunion-forest text-reunion-forest hover:bg-reunion-forest hover:text-white',
+              )}>
                 Tham gia
               </Link>
               
               {/* Mobile menu trigger */}
               <button 
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="inline-flex rounded-md p-2 text-reunion-forest transition-colors hover:bg-reunion-forest/5 lg:hidden"
+                className={cn(
+                  'inline-flex rounded-md p-2 transition-colors lg:hidden',
+                  isHeaderTransparent
+                    ? 'text-white hover:bg-white/10'
+                    : 'text-reunion-forest hover:bg-reunion-forest/5',
+                )}
               >
                 {isMenuOpen ? <CloseIcon className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
@@ -95,7 +141,7 @@ function RootComponent() {
         </nav>
       </div>
 
-      <main className="flex-1 overflow-hidden pt-20">
+      <main className={cn('flex-1 overflow-hidden', isHomePage ? 'pt-0' : 'pt-20')}>
         <div key={pathname} className="page-transition">
           <Outlet />
         </div>
@@ -139,11 +185,16 @@ function DocumentHead() {
   return createPortal(<HeadContent />, document.head)
 }
 
-function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
+function NavLink({ to, inverted, children }: { to: string; inverted?: boolean; children: React.ReactNode }) {
   return (
     <Link 
       to={to} 
-      className="group relative py-0.5 text-[11px] font-bold uppercase tracking-[0.25em] text-reunion-ink/60 transition-colors hover:text-reunion-forest [&.active]:text-reunion-forest"
+      className={cn(
+        'group relative py-0.5 text-[11px] font-bold uppercase tracking-[0.25em] transition-colors',
+        inverted
+          ? 'text-white/75 hover:text-white [&.active]:text-white'
+          : 'text-reunion-ink/60 hover:text-reunion-forest [&.active]:text-reunion-forest',
+      )}
     >
       {children}
       <span className="absolute -bottom-1 left-0 h-0.5 w-0 bg-reunion-gold transition-all duration-300 group-hover:w-full group-[.active]:w-full" />

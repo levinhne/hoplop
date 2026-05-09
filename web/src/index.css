@@ -40,6 +40,26 @@
     @apply max-w-6xl mx-auto px-5 sm:px-6 lg:px-8;
   }
 
+  .site-header {
+    --nav-bg-opacity: 0.9;
+    --nav-border-opacity: 0.1;
+    --nav-shadow-opacity: 0.08;
+    --nav-blur: 14px;
+    background-color: hsl(var(--background) / var(--nav-bg-opacity));
+    border-color: hsl(36 34% 52% / var(--nav-border-opacity));
+    box-shadow: 0 10px 30px rgb(35 28 20 / var(--nav-shadow-opacity));
+    backdrop-filter: blur(var(--nav-blur));
+    transition:
+      background-color 220ms ease,
+      border-color 220ms ease,
+      box-shadow 220ms ease,
+      backdrop-filter 220ms ease;
+  }
+
+  .site-header-home {
+    will-change: background-color, border-color, box-shadow;
+  }
+
   .page-hero {
     @apply border-b border-reunion-gold/10 bg-white/55 py-12 md:py-16;
   }
@@ -148,6 +168,27 @@
     animation: hero-caret 0.9s step-end infinite;
   }
 
+  .hero-crossfade-slide {
+    opacity: 0;
+    overflow: hidden;
+    transition: opacity 1800ms ease-in-out;
+    will-change: opacity;
+  }
+
+  .hero-crossfade-slide[data-active='true'] {
+    opacity: 1;
+  }
+
+  .hero-crossfade-image {
+    transform: scale(1);
+    transition: transform 6200ms ease-out;
+    will-change: transform;
+  }
+
+  .hero-crossfade-slide[data-active='true'] .hero-crossfade-image {
+    transform: scale(1.045);
+  }
+
   .page-transition {
     animation: page-enter 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
     will-change: opacity, transform;
@@ -192,7 +233,10 @@
   .home-marquee-track,
   .home-marquee-track-reverse,
   .hero-typing-caret,
+  .hero-crossfade-slide,
+  .hero-crossfade-image,
   .page-transition {
     animation: none;
+    transition: none;
   }
 }

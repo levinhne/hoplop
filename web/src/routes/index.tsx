@@ -1,13 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-} from '@/components/ui/carousel'
-import Autoplay from 'embla-carousel-autoplay'
 import { getMemberClassName } from '@/lib/members'
 import { getFileUrl } from '@/lib/pocketbase'
 import { normalizeText } from '@/lib/utils'
@@ -29,6 +23,23 @@ const heroTypingLines = [
   'Có một thời áo trắng, đi qua rồi vẫn sáng trong ký ức.',
   'Sân trường cũ, hàng ghế cũ, và những cái tên chưa bao giờ cũ.',
   'Gặp lại nhau để biết rằng, năm tháng đã đi qua rất dịu dàng.',
+  'Ngày ấy đi học là để học, nhưng nhớ nhất vẫn là để gặp nhau.',
+  'Có những cái tên chỉ cần nhắc lại, cả một thời áo trắng ùa về.',
+  'Thanh xuân không quay lại, nhưng kỷ niệm thì vẫn biết đường trở về.',
+  'Một lần gặp lại, đủ để những năm tháng cũ mỉm cười.',
+  'Chúng ta từng chung một lớp, rồi cùng giữ một góc trời ký ức.',
+  'Những trò nghịch ngợm năm ấy, giờ kể lại vẫn thấy thương.',
+  'Có những người bạn cũ, gặp lại vẫn thân như vừa mới hôm qua.',
+  'Tiếng cười năm ấy không mất đi, chỉ nằm yên trong tim mỗi người.',
+  'Sau bao năm xa cách, điều quý nhất là vẫn còn nhận ra nhau bằng nụ cười.',
+  'Mỗi người một hành trình, nhưng ký ức lớp mình vẫn chung một lối về.',
+  'Có những buổi tan trường đã xa, nhưng cảm giác chờ nhau vẫn còn rất gần.',
+  'Năm tháng làm chúng ta lớn lên, còn kỷ niệm giữ chúng ta lại bên nhau.',
+  'Một góc sân, một hàng cây, đủ gọi về cả tuổi học trò.',
+  'Bạn cũ gặp lại, câu đầu tiên chưa nói hết mà lòng đã thấy vui.',
+  'Có những ngày bình thường năm ấy, bây giờ nhớ lại hóa thành điều quý giá.',
+  'Chúng ta đã đi qua tuổi nhỏ cùng nhau, nên ký ức ấy không bao giờ lạc mất.',
+  'Hôm nay gặp lại, để thấy thanh xuân vẫn còn nguyên trong ánh mắt mỗi người.',
 ]
 
 export const Route = createFileRoute('/')({
@@ -54,50 +65,46 @@ function HomeComponent() {
   const sliderImages = gallery?.slice(0, 6) ?? []
   const typedHeroLine = useTypingLoop(heroTypingLines)
   const showHeroActions = useShowAfterScrollRatio(1 / 5)
-
-  const autoplayPlugin = useMemo(() => Autoplay({ delay: 4000, stopOnInteraction: false }), [])
+  const activeSlideIndex = useHeroSlideIndex(sliderImages.length)
 
   return (
     <div className="flex flex-col">
       <section className="home-hero relative overflow-hidden">
         <div className="absolute inset-0 bg-reunion-forest">
-          <Carousel
-            plugins={[autoplayPlugin]}
-            className="h-full w-full [&>div]:h-full"
-            opts={{
-              loop: true,
-            }}
-          >
-            <CarouselContent className="ml-0 h-full">
-              {isLoadingGallery ? (
-                <CarouselItem className="h-full basis-full pl-0">
-                  <Skeleton className="h-full w-full rounded-none bg-reunion-forest/80" />
-                </CarouselItem>
-              ) : sliderImages.length > 0 ? (
-                sliderImages.map((item) => (
-                  <CarouselItem key={item.id} className="relative h-full basis-full pl-0">
-                    <img
-                      src={getFileUrl('gallery', item.id, item.image)}
-                      alt={item.caption || 'Kỷ niệm'}
-                      className="h-full w-full object-cover opacity-80"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-reunion-forest/95 via-reunion-forest/68 to-reunion-ink/30" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-reunion-ink/65 via-transparent to-reunion-ink/25" />
-                  </CarouselItem>
-                ))
-              ) : (
-                <CarouselItem className="relative h-full basis-full overflow-hidden bg-reunion-forest pl-0">
-                  <div className="pointer-events-none absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-reunion-forest via-reunion-ink to-reunion-wine/80" />
-                </CarouselItem>
-              )}
-            </CarouselContent>
-          </Carousel>
+          {isLoadingGallery ? (
+            <Skeleton className="h-full w-full rounded-none bg-reunion-forest/80" />
+          ) : sliderImages.length > 0 ? (
+            sliderImages.map((item, index) => {
+              const isActive = index === activeSlideIndex
+
+              return (
+                <div
+                  key={item.id}
+                  className="hero-crossfade-slide absolute inset-0"
+                  data-active={isActive}
+                  aria-hidden={!isActive}
+                >
+                  <img
+                    src={getFileUrl('gallery', item.id, item.image)}
+                    alt={item.caption || 'Kỷ niệm'}
+                    className="hero-crossfade-image h-full w-full object-cover opacity-80"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-reunion-forest/95 via-reunion-forest/68 to-reunion-ink/30" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-reunion-ink/65 via-transparent to-reunion-ink/25" />
+                </div>
+              )
+            })
+          ) : (
+            <div className="relative h-full overflow-hidden bg-reunion-forest">
+              <div className="pointer-events-none absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
+              <div className="absolute inset-0 bg-gradient-to-br from-reunion-forest via-reunion-ink to-reunion-wine/80" />
+            </div>
+          )}
         </div>
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-16 bg-gradient-to-t from-reunion-paper/35 to-transparent" />
 
-        <div className="section-container relative z-20 flex min-h-[100svh] flex-col justify-center py-20 md:py-24">
+        <div className="section-container relative z-20 flex min-h-[100svh] flex-col justify-center pb-12 pt-24 md:pb-16 md:pt-32">
           <div className="max-w-4xl space-y-6 md:space-y-8">
             <div>
               <div className="mb-4 flex items-center gap-3">
@@ -122,23 +129,23 @@ function HomeComponent() {
             </div>
 
             <div
-              className={`flex flex-col gap-4 pt-2 transition-all duration-700 ease-out sm:flex-row md:pt-3 ${
+              className={`flex flex-col gap-3 pt-1 transition-all duration-700 ease-out sm:flex-row md:pt-2 ${
                 showHeroActions
                   ? 'translate-y-0 opacity-100'
                   : 'pointer-events-none translate-y-5 opacity-0'
               }`}
               aria-hidden={!showHeroActions}
             >
-              <Button asChild className="h-12 rounded-none bg-reunion-gold px-7 text-xs font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:translate-x-1 hover:bg-[#9a7947]">
+              <Button asChild className="h-11 rounded-none bg-reunion-gold px-6 text-[11px] font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:translate-x-1 hover:bg-[#9a7947]">
                 <Link to="/members">Xem thành viên</Link>
               </Button>
-              <Button asChild variant="outline" className="h-12 rounded-none border-2 border-white/80 bg-white/10 px-7 text-xs font-bold uppercase tracking-widest text-white backdrop-blur-sm transition-all hover:bg-white hover:text-reunion-forest">
+              <Button asChild variant="outline" className="h-11 rounded-none border-2 border-white/80 bg-white/10 px-6 text-[11px] font-bold uppercase tracking-widest text-white backdrop-blur-sm transition-all hover:bg-white hover:text-reunion-forest">
                 <Link to="/feelings">Viết lời nhắn</Link>
               </Button>
             </div>
 
             <div
-              className={`flex flex-wrap gap-5 pt-3 transition-all duration-700 ease-out md:gap-8 md:pt-5 ${
+              className={`flex flex-wrap gap-4 pt-2 transition-all duration-700 ease-out md:gap-6 md:pt-3 ${
                 showHeroActions
                   ? 'translate-y-0 opacity-100'
                   : 'pointer-events-none translate-y-5 opacity-0'
@@ -289,7 +296,7 @@ function useTypingLoop(lines: string[]) {
     const currentLine = lines[lineIndex] ?? ''
     const isLineComplete = !isDeleting && charIndex === currentLine.length
     const isLineDeleted = isDeleting && charIndex === 0
-    const delay = isLineComplete ? 1800 : isDeleting ? 28 : 55
+    const delay = isLineComplete ? 9000 : isDeleting ? 28 : 55
 
     const timeout = window.setTimeout(() => {
       if (isLineComplete) {
@@ -333,6 +340,22 @@ function useShowAfterScrollRatio(ratio: number) {
   return isVisible
 }
 
+function useHeroSlideIndex(slideCount: number) {
+  const [activeIndex, setActiveIndex] = useState(0)
+
+  useEffect(() => {
+    if (slideCount <= 1) return
+
+    const interval = window.setInterval(() => {
+      setActiveIndex((current) => (current + 1) % slideCount)
+    }, 5200)
+
+    return () => window.clearInterval(interval)
+  }, [slideCount])
+
+  return slideCount > 0 ? activeIndex % slideCount : 0
+}
+
 function HeroStat({
   value,
   label,
@@ -349,9 +372,9 @@ function HeroStat({
   return (
     <div>
       {isLoading ? (
-        <Skeleton className="mb-2 h-10 w-16 rounded-md bg-white/25" />
+        <Skeleton className="mb-1.5 h-8 w-14 rounded-md bg-white/25" />
       ) : (
-        <div className={`text-3xl md:text-4xl font-serif font-bold ${isLight ? 'text-white' : 'text-reunion-forest'}`}>{value}</div>
+        <div className={`text-2xl md:text-3xl font-serif font-bold ${isLight ? 'text-white' : 'text-reunion-forest'}`}>{value}</div>
       )}
       <div className={`mt-1 text-[10px] font-bold uppercase tracking-[0.2em] ${isLight ? 'text-white/65' : 'text-slate-400'}`}>{label}</div>
     </div>
@@ -359,7 +382,7 @@ function HeroStat({
 }
 
 function HeroDivider({ variant = 'default' }: { variant?: 'default' | 'light' }) {
-  return <div className={`hidden h-12 w-px sm:block ${variant === 'light' ? 'bg-white/25' : 'bg-slate-100'}`} />
+  return <div className={`hidden h-10 w-px sm:block ${variant === 'light' ? 'bg-white/25' : 'bg-slate-100'}`} />
 }
 
 function SummaryItem({ value, label, isLoading }: { value: string; label: string; isLoading?: boolean }) {
