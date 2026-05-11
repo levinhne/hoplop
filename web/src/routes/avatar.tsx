@@ -243,8 +243,7 @@ function AvatarComponent() {
     if (!canvas) return null
 
     return new Promise<Blob | null>((resolve) => {
-      // Tối ưu: Xuất định dạng JPEG chất lượng cao để dung lượng nhẹ hơn đáng kể so với PNG
-      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.92)
+      canvas.toBlob((blob) => resolve(blob), 'image/png')
     })
   }, [drawCanvas])
 
@@ -282,10 +281,10 @@ function AvatarComponent() {
       shareWindow?.document.write('<p style="font-family: sans-serif; padding: 24px;">Đang chuẩn bị ảnh chia sẻ...</p>')
 
       const formData = new FormData()
-      formData.append('image', blob, 'giao-lo-khoi-9-avatar.jpg')
+      formData.append('image', blob, 'giao-lo-khoi-9-avatar.png')
       formData.append('access_code', getStoredReunionAccessCode())
 
-      const response = await fetch(`${pocketBaseUrl}/api/avatar-shares`, {
+      const response = await fetch(`${pocketBaseUrl.replace(/\/$/, '')}/api/avatar-shares`, {
         method: 'POST',
         body: formData,
       })
