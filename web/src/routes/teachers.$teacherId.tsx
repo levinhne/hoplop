@@ -1,47 +1,52 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
-import { BookOpen, GraduationCap, Heart } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import { getFileUrl, pb } from '@/lib/pocketbase'
-import { normalizeText } from '@/lib/utils'
-import { seo } from '@/lib/seo'
-import { TargetFeelingsBox } from '@/components/target-feelings-box'
-import type { Teacher } from '@/types'
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { BookOpen, GraduationCap, Heart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getFileUrl, pb } from "@/lib/pocketbase";
+import { normalizeText } from "@/lib/utils";
+import { seo } from "@/lib/seo";
+import { TargetFeelingsBox } from "@/components/target-feelings-box";
+import type { Teacher } from "@/types";
 
-export const Route = createFileRoute('/teachers/$teacherId')({
+export const Route = createFileRoute("/teachers/$teacherId")({
   head: () => ({
     meta: seo({
-      title: 'Chi tiết thầy cô',
-      description: 'Trang check-in và gửi lời tri ân cho từng thầy cô.',
+      title: "Chi tiết Thầy Cô",
+      description: "Trang check-in và gửi lời tri ân cho từng Thầy Cô.",
     }),
   }),
   component: TeacherDetailPage,
-})
+});
 
 function TeacherDetailPage() {
-  const { teacherId } = Route.useParams()
+  const { teacherId } = Route.useParams();
 
-  const { data: teacher, isLoading, error } = useQuery({
-    queryKey: ['teachers', teacherId],
+  const {
+    data: teacher,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["teachers", teacherId],
     queryFn: async () => {
-      return pb.collection('teachers').getOne<Teacher>(teacherId)
+      return pb.collection("teachers").getOne<Teacher>(teacherId);
     },
-  })
+  });
 
   if (isLoading) {
-    return <DetailSkeleton />
+    return <DetailSkeleton />;
   }
 
   if (error || !teacher) {
-    return <NotFoundState />
+    return <NotFoundState />;
   }
 
-  const avatarUrl = getFileUrl('teachers', teacher.id, teacher.avatar)
-  const subject = teacher.subject?.trim() || 'Đang cập nhật môn học'
-  const period = teacher.period?.trim() || 'Đang cập nhật giai đoạn'
-  const tribute = normalizeText(teacher.tribute) || 'Lời tri ân đang được cập nhật...'
-  const initial = teacher.name.trim().substring(0, 1) || 'T'
+  const avatarUrl = getFileUrl("teachers", teacher.id, teacher.avatar);
+  const subject = teacher.subject?.trim() || "Đang cập nhật môn học";
+  const period = teacher.period?.trim() || "Đang cập nhật giai đoạn";
+  const tribute =
+    normalizeText(teacher.tribute) || "Lời tri ân đang được cập nhật...";
+  const initial = teacher.name.trim().substring(0, 1) || "T";
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -51,7 +56,11 @@ function TeacherDetailPage() {
             <div className="lg:col-span-5">
               <div className="overflow-hidden rounded-lg border-4 border-white bg-slate-100 shadow-xl md:border-8 lg:max-h-[72svh]">
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt={teacher.name} className="aspect-[4/5] h-full w-full object-cover" />
+                  <img
+                    src={avatarUrl}
+                    alt={teacher.name}
+                    className="aspect-[4/5] h-full w-full object-cover"
+                  />
                 ) : (
                   <div className="flex aspect-[4/5] items-center justify-center text-8xl font-serif font-bold text-slate-200">
                     {initial}
@@ -95,10 +104,10 @@ function TeacherDetailPage() {
         targetId={teacher.id}
         targetType="teacher"
         title={`Lưu bút viết về ${teacher.name}`}
-        emptyMessage="Chưa có lưu bút nào viết riêng cho thầy cô."
+        emptyMessage="Chưa có lưu bút nào viết riêng cho Thầy Cô."
       />
     </div>
-  )
+  );
 }
 
 function DetailSkeleton() {
@@ -111,7 +120,7 @@ function DetailSkeleton() {
         <Skeleton className="h-32 w-full rounded-md" />
       </div>
     </div>
-  )
+  );
 }
 
 function NotFoundState() {
@@ -119,11 +128,17 @@ function NotFoundState() {
     <div className="section-container py-14 text-center">
       <div className="mx-auto max-w-md space-y-4 rounded-lg border border-dashed border-slate-200 bg-white/70 p-7">
         <GraduationCap className="mx-auto h-8 w-8 text-slate-300" />
-        <h1 className="font-serif text-2xl font-bold text-reunion-ink">Không tìm thấy thầy cô</h1>
-        <Button asChild variant="outline" className="h-10 rounded-md text-[10px] font-bold uppercase tracking-widest">
-          <Link to="/teachers">Về danh sách thầy cô</Link>
+        <h1 className="font-serif text-2xl font-bold text-reunion-ink">
+          Không tìm thấy Thầy Cô
+        </h1>
+        <Button
+          asChild
+          variant="outline"
+          className="h-10 rounded-md text-[10px] font-bold uppercase tracking-widest"
+        >
+          <Link to="/teachers">Về danh sách Thầy Cô</Link>
         </Button>
       </div>
     </div>
-  )
+  );
 }
