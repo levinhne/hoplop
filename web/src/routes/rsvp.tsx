@@ -143,7 +143,7 @@ function RsvpPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="min-h-screen bg-reunion-paper">
       <section className="page-hero">
         <div className="section-container grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-end">
           <div className="max-w-3xl space-y-3 lg:col-span-8">
@@ -296,7 +296,7 @@ function RsvpPage() {
               <Button
                 type="submit"
                 disabled={createRsvp.isPending}
-                className="h-12 w-full rounded-none bg-reunion-forest text-[10px] font-bold uppercase tracking-widest text-white hover:bg-emerald-900"
+                className="h-12 w-full rounded-md bg-reunion-forest text-[10px] font-bold uppercase tracking-widest text-white hover:bg-emerald-900"
               >
                 <Send className="h-4 w-4" />
                 {createRsvp.isPending ? 'Đang gửi...' : 'Gửi xác nhận'}

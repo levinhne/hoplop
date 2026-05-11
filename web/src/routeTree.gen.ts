@@ -14,6 +14,7 @@ import { Route as RsvpRouteImport } from './routes/rsvp'
 import { Route as MembersRouteImport } from './routes/members'
 import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as FeelingsRouteImport } from './routes/feelings'
+import { Route as AvatarRouteImport } from './routes/avatar'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TeachersTeacherIdRouteImport } from './routes/teachers.$teacherId'
 import { Route as MembersMemberIdRouteImport } from './routes/members.$memberId'
@@ -43,6 +44,11 @@ const FeelingsRoute = FeelingsRouteImport.update({
   path: '/feelings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AvatarRoute = AvatarRouteImport.update({
+  id: '/avatar',
+  path: '/avatar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -61,6 +67,7 @@ const MembersMemberIdRoute = MembersMemberIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/avatar': typeof AvatarRoute
   '/feelings': typeof FeelingsRoute
   '/gallery': typeof GalleryRoute
   '/members': typeof MembersRouteWithChildren
@@ -71,6 +78,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/avatar': typeof AvatarRoute
   '/feelings': typeof FeelingsRoute
   '/gallery': typeof GalleryRoute
   '/members': typeof MembersRouteWithChildren
@@ -82,6 +90,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/avatar': typeof AvatarRoute
   '/feelings': typeof FeelingsRoute
   '/gallery': typeof GalleryRoute
   '/members': typeof MembersRouteWithChildren
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/avatar'
     | '/feelings'
     | '/gallery'
     | '/members'
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/avatar'
     | '/feelings'
     | '/gallery'
     | '/members'
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/avatar'
     | '/feelings'
     | '/gallery'
     | '/members'
@@ -125,6 +137,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AvatarRoute: typeof AvatarRoute
   FeelingsRoute: typeof FeelingsRoute
   GalleryRoute: typeof GalleryRoute
   MembersRoute: typeof MembersRouteWithChildren
@@ -167,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/feelings'
       fullPath: '/feelings'
       preLoaderRoute: typeof FeelingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/avatar': {
+      id: '/avatar'
+      path: '/avatar'
+      fullPath: '/avatar'
+      preLoaderRoute: typeof AvatarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -218,6 +238,7 @@ const TeachersRouteWithChildren = TeachersRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AvatarRoute: AvatarRoute,
   FeelingsRoute: FeelingsRoute,
   GalleryRoute: GalleryRoute,
   MembersRoute: MembersRouteWithChildren,

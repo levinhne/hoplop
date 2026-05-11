@@ -1,11 +1,22 @@
 import { HeadContent, createRootRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 import { Toaster } from '@/components/ui/toaster'
 import { useState, useEffect, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { Menu, X as CloseIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { seo } from '@/lib/seo'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { reunionAccessStorageKey } from '@/lib/pocketbase'
+
+const defaultReunionAccessCode = '31/05'
+const configuredReunionAccessCode = import.meta.env.VITE_REUNION_ACCESS_CODE?.trim() || defaultReunionAccessCode
+const reunionAccessOptions = ['12/05', '25/05', '31/05', '08/06']
 
 export const Route = createRootRoute({
   head: () => ({
@@ -16,6 +27,13 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [accessCode, setAccessCode] = useState('')
+  const [accessError, setAccessError] = useState('')
+  const [isAccessAccepted, setIsAccessAccepted] = useState(false)
+  const [isAccessDialogOpen, setIsAccessDialogOpen] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return !window.localStorage.getItem(reunionAccessStorageKey)
+  })
   const [scrollProgress, setScrollProgress] = useState(0)
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const isHomePage = pathname === '/'
@@ -89,6 +107,7 @@ function RootComponent() {
               <NavLink to="/members" inverted={isHeaderTransparent}>Bạn bè</NavLink>
               <NavLink to="/teachers" inverted={isHeaderTransparent}>Thầy cô</NavLink>
               <NavLink to="/gallery" inverted={isHeaderTransparent}>Kỷ niệm</NavLink>
+              <NavLink to="/avatar" inverted={isHeaderTransparent}>Tạo avatar</NavLink>
               <NavLink to="/feelings" inverted={isHeaderTransparent}>Lưu bút</NavLink>
             </nav>
 
@@ -130,6 +149,7 @@ function RootComponent() {
           <MobileNavLink to="/members" onClick={closeMenu}>Bạn bè</MobileNavLink>
           <MobileNavLink to="/teachers" onClick={closeMenu}>Thầy cô</MobileNavLink>
           <MobileNavLink to="/gallery" onClick={closeMenu}>Kỷ niệm</MobileNavLink>
+          <MobileNavLink to="/avatar" onClick={closeMenu}>Tạo avatar</MobileNavLink>
           <MobileNavLink to="/feelings" onClick={closeMenu}>Lưu bút</MobileNavLink>
           <Link
             to="/rsvp"
@@ -161,6 +181,7 @@ function RootComponent() {
               <Link to="/members" className="text-reunion-paper/60 hover:text-reunion-paper transition-colors text-sm">Danh sách thành viên</Link>
               <Link to="/teachers" className="text-reunion-paper/60 hover:text-reunion-paper transition-colors text-sm">Tri ân thầy cô</Link>
               <Link to="/gallery" className="text-reunion-paper/60 hover:text-reunion-paper transition-colors text-sm">Thư viện ảnh</Link>
+              <Link to="/avatar" className="text-reunion-paper/60 hover:text-reunion-paper transition-colors text-sm">Tạo avatar</Link>
             </div>
             <div className="space-y-4">
               <h4 className="font-bold uppercase tracking-widest text-xs text-reunion-gold">Gặp lại nhau</h4>
@@ -174,7 +195,27 @@ function RootComponent() {
         </div>
       </footer>
       <Toaster />
-      <TanStackRouterDevtools />
+      <ReunionAccessDialog
+        open={isAccessDialogOpen}
+        error={accessError}
+        isAccepted={isAccessAccepted}
+        selectedValue={accessCode}
+        onSelect={(value) => {
+          setAccessCode(value)
+          setIsAccessAccepted(false)
+          if (!isValidReunionAccessCode(value)) {
+            setAccessError('Ngày hội ngộ chưa đúng rồi. Hãy chọn lại một ngày khác nhé.')
+            return
+          }
+
+          setAccessError('')
+          setIsAccessAccepted(true)
+          window.localStorage.setItem(reunionAccessStorageKey, value)
+          window.setTimeout(() => {
+            setIsAccessDialogOpen(false)
+          }, 3500)
+        }}
+      />
     </div>
   )
 }
@@ -212,4 +253,89 @@ function MobileNavLink({ to, onClick, children }: { to: string; onClick: () => v
       {children}
     </Link>
   )
+}
+
+function ReunionAccessDialog({
+  open,
+  error,
+  isAccepted,
+  selectedValue,
+  onSelect,
+}: {
+  open: boolean
+  error: string
+  isAccepted: boolean
+  selectedValue: string
+  onSelect: (value: string) => void
+}) {
+  return (
+    <Dialog open={open}>
+      <DialogContent
+        hideCloseButton
+        onPointerDownOutside={(event) => event.preventDefault()}
+        onEscapeKeyDown={(event) => event.preventDefault()}
+        className="max-w-[calc(100vw-2rem)] rounded-lg border-reunion-gold/20 bg-reunion-paper p-5 sm:max-w-md sm:p-6"
+      >
+        <DialogHeader className="space-y-3 text-left">
+          <span className="eyebrow mb-0">Giao Lộ Khối 9</span>
+          <DialogTitle className="font-serif text-2xl font-bold leading-tight text-reunion-ink md:text-3xl">
+            Kính chào thầy cô và các bạn niên khóa 2002-2006
+          </DialogTitle>
+          <DialogDescription className="font-serif text-sm italic leading-relaxed text-reunion-sepia md:text-base">
+            Đây là không gian kỷ niệm dành cho thầy cô và các bạn Khối 9, Trường THCS Yên Đồng, niên khóa 2002-2006.
+            Hãy chọn ngày hội ngộ để cùng trở lại những năm tháng thân thương.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div>
+            <div className="mb-3 text-[10px] font-bold uppercase tracking-[0.24em] text-reunion-gold">
+              Ngày hội ngộ
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {reunionAccessOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => onSelect(option)}
+                  disabled={isAccepted}
+                  className={cn(
+                    'h-12 rounded-md border bg-white text-base font-bold tracking-[0.14em] text-reunion-ink transition duration-300 active:scale-[0.98] disabled:pointer-events-none',
+                    isAccepted && selectedValue === option
+                      ? 'scale-[1.03] border-reunion-forest bg-reunion-forest text-white shadow-lg shadow-reunion-forest/20 ring-4 ring-reunion-gold/20'
+                      : selectedValue === option
+                      ? 'border-reunion-forest ring-2 ring-reunion-forest/15'
+                      : 'border-slate-200 hover:border-reunion-gold hover:text-reunion-forest',
+                  )}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+            {isAccepted && (
+              <p className="mt-3 rounded-md border border-reunion-gold/20 bg-white/70 px-4 py-3 text-sm font-medium leading-relaxed text-reunion-forest">
+                Đúng ngày hẹn rồi. Mời thầy cô và các bạn cùng bước vào không gian kỷ niệm.
+              </p>
+            )}
+            {error && <p className="mt-3 text-sm font-medium leading-relaxed text-reunion-sepia">{error}</p>}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function isValidReunionAccessCode(value: string) {
+  const match = /^(\d{2})\/(\d{2})$/.exec(value)
+  if (!match) return false
+
+  if (configuredReunionAccessCode && value !== configuredReunionAccessCode) return false
+
+  const day = Number(match[1])
+  const month = Number(match[2])
+
+  if (month < 1 || month > 12) return false
+
+  const daysInMonth = new Date(2026, month, 0).getDate()
+  return day >= 1 && day <= daysInMonth
 }

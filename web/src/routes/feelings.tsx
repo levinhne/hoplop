@@ -1,4 +1,5 @@
 import { useCreateFeeling, useFeelings } from '@/hooks/useFeelings'
+import { useClasses } from '@/hooks/useClasses'
 import { useMembers } from '@/hooks/useMembers'
 import { useTeachers } from '@/hooks/useTeachers'
 import { getMemberClassName } from '@/lib/members'
@@ -7,7 +8,7 @@ import { Check, ChevronsUpDown, MessageSquareQuote, PenLine, Send, UserRoundChec
 import type { Feeling } from '@/types'
 import { useToast } from '@/hooks/use-toast'
 import { useMemo, useState } from 'react'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
@@ -32,13 +33,23 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { getFileUrl } from '@/lib/pocketbase'
 import { seo } from '@/lib/seo'
 
-type FeelingFilter = 'all' | 'general' | 'teacher' | 'member'
+const feelingTargetTypes = ['general', 'class', 'teacher', 'member'] as const
+
+type FeelingTargetType = (typeof feelingTargetTypes)[number]
+type FeelingFilter = 'all' | FeelingTargetType
+type FeelingSearch = {
+  open?: boolean
+  target_type?: FeelingTargetType
+  target_id?: string
+}
+
+const FEELINGS_PAGE_SIZE = 6
 
 const feelingSchema = z
   .object({
     author_name: z.string().min(2, 'Vui lòng nhập tên của bạn.'),
     content: z.string().min(10, 'Lời nhắn cần ít nhất 10 ký tự.').max(1000, 'Lời nhắn tối đa 1000 ký tự.'),
-    target_type: z.enum(['general', 'teacher', 'member']),
+    target_type: z.enum(['general', 'class', 'teacher', 'member']),
     target_id: z.string().optional(),
   })
   .superRefine((data, ctx) => {
@@ -54,7 +65,22 @@ const feelingSchema = z
 
 type FeelingFormValues = z.infer<typeof feelingSchema>
 
+function normalizeTargetType(value: unknown): FeelingFormValues['target_type'] | undefined {
+  return feelingTargetTypes.find((targetType) => targetType === value)
+}
+
 export const Route = createFileRoute('/feelings')({
+  validateSearch: (search: Record<string, unknown>): FeelingSearch => {
+    const targetType = normalizeTargetType(search.target_type)
+    const targetId = typeof search.target_id === 'string' ? search.target_id : ''
+    const shouldOpen = search.open === true || search.open === 'true' || search.open === '1'
+
+    return {
+      ...(shouldOpen ? { open: true } : {}),
+      ...(targetType ? { target_type: targetType } : {}),
+      ...(targetId ? { target_id: targetId } : {}),
+    }
+  },
   head: () => ({
     meta: seo({
       title: 'Lưu bút',
@@ -65,13 +91,17 @@ export const Route = createFileRoute('/feelings')({
 })
 
 function FeelingsPage() {
+  const search = Route.useSearch()
   const { data: feelings, isLoading: isLoadingFeelings, error: feelingsError } = useFeelings()
+  const { data: classes, isLoading: isLoadingClasses } = useClasses()
   const { data: members, isLoading: isLoadingMembers } = useMembers()
   const { data: teachers, isLoading: isLoadingTeachers } = useTeachers()
   const createFeeling = useCreateFeeling()
   const { toast } = useToast()
   const [feelingFilter, setFeelingFilter] = useState<FeelingFilter>('all')
+  const [currentPage, setCurrentPage] = useState(1)
   const [targetComboboxOpen, setTargetComboboxOpen] = useState(false)
+  const [isFormDialogOpen, setIsFormDialogOpen] = useState(() => Boolean(search.open))
 
   const {
     register,
@@ -85,16 +115,27 @@ function FeelingsPage() {
     defaultValues: {
       author_name: '',
       content: '',
-      target_type: 'general',
-      target_id: '',
+      target_type: search.target_type ?? 'general',
+      target_id: search.target_type && search.target_type !== 'general' ? search.target_id ?? '' : '',
     },
   })
 
   const targetType = useWatch({ control, name: 'target_type' })
   const targetId = useWatch({ control, name: 'target_id' })
-  const isLoadingTargets = targetType === 'teacher' ? isLoadingTeachers : targetType === 'member' ? isLoadingMembers : false
+  const isLoadingTargets =
+    targetType === 'class'
+      ? isLoadingClasses
+      : targetType === 'teacher'
+        ? isLoadingTeachers
+        : targetType === 'member'
+          ? isLoadingMembers
+          : false
 
   const targetOptions = useMemo(() => {
+    if (targetType === 'class') {
+      return classes?.map((classGroup) => ({ id: classGroup.id, name: classGroup.name, meta: classGroup.school_year })) ?? []
+    }
+
     if (targetType === 'teacher') {
       return teachers?.map((teacher) => ({ id: teacher.id, name: teacher.name, meta: teacher.subject })) ?? []
     }
@@ -104,7 +145,7 @@ function FeelingsPage() {
     }
 
     return []
-  }, [members, targetType, teachers])
+  }, [classes, members, targetType, teachers])
 
   const selectedTarget = useMemo(() => {
     return targetOptions.find((option) => option.id === targetId)
@@ -116,6 +157,18 @@ function FeelingsPage() {
 
     return feelings.filter((feeling) => feeling.target_type === feelingFilter)
   }, [feelingFilter, feelings])
+
+  const totalPages = Math.max(1, Math.ceil(visibleFeelings.length / FEELINGS_PAGE_SIZE))
+  const activePage = Math.min(currentPage, totalPages)
+  const paginatedFeelings = visibleFeelings.slice(
+    (activePage - 1) * FEELINGS_PAGE_SIZE,
+    activePage * FEELINGS_PAGE_SIZE
+  )
+
+  const handleFilterChange = (filter: FeelingFilter) => {
+    setFeelingFilter(filter)
+    setCurrentPage(1)
+  }
 
   const onSubmit = (values: FeelingFormValues) => {
     createFeeling.mutate(values, {
@@ -131,6 +184,8 @@ function FeelingsPage() {
           target_type: 'general',
           target_id: '',
         })
+        setTargetComboboxOpen(false)
+        setIsFormDialogOpen(false)
       },
       onError: () => {
         toast({
@@ -143,7 +198,7 @@ function FeelingsPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="min-h-screen bg-reunion-paper">
       <section className="page-hero">
         <div className="section-container grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-end">
           <div className="max-w-3xl space-y-3 lg:col-span-8">
@@ -161,27 +216,165 @@ function FeelingsPage() {
             <p className="font-serif text-base italic leading-relaxed text-reunion-sepia">
               "Có những câu chuyện chỉ cần một lần nhắc lại, cả sân trường cũ bỗng hiện về."
             </p>
+            <Button
+              type="button"
+              className="mt-5 h-11 w-full rounded-md bg-reunion-forest text-[10px] font-bold uppercase tracking-widest text-white hover:bg-emerald-900"
+              onClick={() => setIsFormDialogOpen(true)}
+            >
+              <PenLine className="h-4 w-4" />
+              Gửi lưu bút
+            </Button>
           </div>
         </div>
       </section>
 
       <section className="content-section">
-        <div className="section-container grid grid-cols-1 gap-8 lg:grid-cols-12">
-          <div className="lg:col-span-5">
-            <form
-              className="soft-panel sticky top-24 space-y-6 p-6 md:p-7"
-              onSubmit={handleSubmit(onSubmit)}
-            >
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-reunion-gold">
-                  <PenLine className="h-4 w-4" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Gửi lời nhắn</span>
+        <div className="section-container">
+          <div className="space-y-6">
+            <div className="filter-panel">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <span className="eyebrow">Đã duyệt</span>
+                  <h2 className="font-serif text-3xl font-bold text-reunion-ink">Những lời nhắn đã gửi</h2>
                 </div>
-                <p className="text-sm leading-relaxed text-slate-500">
-                  Lời nhắn mới sẽ được ban tổ chức duyệt trước khi hiển thị công khai.
-                </p>
               </div>
 
+              {isLoadingFeelings ? (
+                <div className="flex flex-wrap gap-2">
+                  {[1, 2, 3, 4].map((item) => (
+                    <Skeleton key={item} className="h-10 w-24 rounded-md" />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  <FeelingFilterButton
+                    label="Tất cả"
+                    count={feelings?.length ?? 0}
+                    active={feelingFilter === 'all'}
+                    onClick={() => handleFilterChange('all')}
+                  />
+                  <FeelingFilterButton
+                    label="Gửi tất cả"
+                    count={countFeelings(feelings, 'general')}
+                    active={feelingFilter === 'general'}
+                    onClick={() => handleFilterChange('general')}
+                  />
+                  <FeelingFilterButton
+                    label="Theo lớp"
+                    count={countFeelings(feelings, 'class')}
+                    active={feelingFilter === 'class'}
+                    onClick={() => handleFilterChange('class')}
+                  />
+                  <FeelingFilterButton
+                    label="Thầy cô"
+                    count={countFeelings(feelings, 'teacher')}
+                    active={feelingFilter === 'teacher'}
+                    onClick={() => handleFilterChange('teacher')}
+                  />
+                  <FeelingFilterButton
+                    label="Bạn bè"
+                    count={countFeelings(feelings, 'member')}
+                    active={feelingFilter === 'member'}
+                    onClick={() => handleFilterChange('member')}
+                  />
+                </div>
+              )}
+            </div>
+
+            {feelingsError ? (
+              <div className="rounded-lg border border-red-100 bg-white p-8 text-center text-sm text-red-700">
+                Không tải được danh sách lời nhắn đã duyệt.
+              </div>
+            ) : isLoadingFeelings ? (
+              <div className="space-y-5">
+                {[1, 2, 3].map((item) => (
+                  <div key={item} className="rounded-lg border border-slate-100 bg-white p-6">
+                    <Skeleton className="mb-4 h-5 w-1/3" />
+                    <Skeleton className="mb-3 h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
+                ))}
+              </div>
+            ) : visibleFeelings.length ? (
+              <div className="space-y-6">
+                <div className="space-y-5">
+                  {paginatedFeelings.map((feeling) => (
+                    <FeelingCard key={feeling.id} feeling={feeling} />
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="flex flex-col gap-3 border-t border-slate-200/70 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-medium text-slate-500">
+                      Trang {activePage} / {totalPages}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 rounded-md border-slate-200 px-4 text-[10px] font-bold uppercase tracking-widest"
+                        disabled={activePage === 1}
+                        onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                      >
+                        Trước
+                      </Button>
+                      {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                        <Button
+                          key={page}
+                          type="button"
+                          variant={page === activePage ? 'default' : 'outline'}
+                          className="h-10 w-10 rounded-md px-0 text-xs font-bold"
+                          onClick={() => setCurrentPage(page)}
+                        >
+                          {page}
+                        </Button>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 rounded-md border-slate-200 px-4 text-[10px] font-bold uppercase tracking-widest"
+                        disabled={activePage === totalPages}
+                        onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                      >
+                        Sau
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-slate-200 bg-white/70 p-7 text-center">
+                <UserRoundCheck className="mx-auto mb-4 h-8 w-8 text-slate-300" />
+                <p className="font-serif italic text-slate-400">Chưa có lời nhắn nào được duyệt.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <Dialog
+        open={isFormDialogOpen}
+        onOpenChange={(open) => {
+          setIsFormDialogOpen(open)
+          if (!open) setTargetComboboxOpen(false)
+        }}
+      >
+        <DialogContent className="max-h-[94svh] w-[calc(100vw-1rem)] max-w-2xl overflow-y-auto rounded-xl border-none p-0 shadow-2xl sm:w-full">
+          <div className="bg-white p-4 pb-5 pt-5 sm:p-6 md:p-8">
+            <div className="mb-5 space-y-2 pr-8 sm:mb-6 sm:space-y-3 sm:pr-0">
+              <div className="flex items-center gap-3 text-reunion-gold">
+                <PenLine className="h-4 w-4" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Gửi lời nhắn</span>
+              </div>
+              <DialogTitle className="font-serif text-2xl font-bold leading-tight text-reunion-ink sm:text-3xl">
+                Gửi vào lưu bút
+              </DialogTitle>
+              <DialogDescription className="text-sm leading-relaxed text-slate-500 sm:max-w-xl">
+                Lời nhắn mới sẽ được ban tổ chức duyệt trước khi hiển thị công khai.
+              </DialogDescription>
+            </div>
+
+            <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <Field label="Bạn tên là gì?" error={errors.author_name?.message}>
                 <input
                   type="text"
@@ -192,12 +385,21 @@ function FeelingsPage() {
               </Field>
 
               <Field label="Gửi tới" error={errors.target_type?.message || errors.target_id?.message}>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
                   <TargetButton
-                    label="Cả lớp"
+                    label="Tất cả"
                     active={targetType === 'general'}
                     onClick={() => {
                       setValue('target_type', 'general')
+                      setValue('target_id', '')
+                      setTargetComboboxOpen(false)
+                    }}
+                  />
+                  <TargetButton
+                    label="Cả lớp"
+                    active={targetType === 'class'}
+                    onClick={() => {
+                      setValue('target_type', 'class')
                       setValue('target_id', '')
                       setTargetComboboxOpen(false)
                     }}
@@ -234,22 +436,22 @@ function FeelingsPage() {
                         variant="outline"
                         role="combobox"
                         aria-expanded={targetComboboxOpen}
-                        className="mt-3 h-12 w-full justify-between rounded-lg border-slate-200 bg-white px-4 text-left text-sm font-medium text-reunion-ink hover:bg-white hover:text-reunion-ink"
+                        className="mt-3 h-11 w-full justify-between rounded-lg border-slate-200 bg-white px-3 text-left text-sm font-medium text-reunion-ink hover:bg-white hover:text-reunion-ink sm:h-12 sm:px-4"
                       >
                         <span className={cn('truncate', !selectedTarget && 'text-slate-300')}>
                           {selectedTarget
                             ? `${selectedTarget.name}${selectedTarget.meta ? ` - ${selectedTarget.meta}` : ''}`
-                            : 'Chọn người nhận'}
+                            : getTargetPlaceholder(targetType)}
                         </span>
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-300" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                       <Command>
-                        <CommandInput placeholder={targetType === 'teacher' ? 'Tìm thầy cô...' : 'Tìm bạn bè...'} />
+                        <CommandInput placeholder={getTargetSearchPlaceholder(targetType)} />
                         <CommandList>
                           <CommandEmpty>Không tìm thấy người nhận.</CommandEmpty>
-                          <CommandGroup heading={targetType === 'teacher' ? 'Thầy cô' : 'Bạn bè'}>
+                          <CommandGroup heading={getTargetGroupHeading(targetType)}>
                             {targetOptions.map((option) => (
                               <CommandItem
                                 key={option.id}
@@ -281,99 +483,25 @@ function FeelingsPage() {
               <Field label="Lời nhắn gửi của bạn" error={errors.content?.message}>
                 <textarea
                   placeholder="Hãy viết gì đó thật chân thành..."
-                  className="form-control h-44 resize-none leading-relaxed"
+                  className="form-control h-32 resize-none leading-relaxed sm:h-44"
                   {...register('content')}
                 />
               </Field>
 
-              <Button
-                type="submit"
-                disabled={createFeeling.isPending}
-                className="h-12 w-full rounded-none bg-reunion-forest text-[10px] font-bold uppercase tracking-widest text-white hover:bg-emerald-900"
-              >
-                <Send className="h-4 w-4" />
-                {createFeeling.isPending ? 'Đang gửi...' : 'Gửi vào lưu bút'}
-              </Button>
-            </form>
-          </div>
-
-          <div className="space-y-6 lg:col-span-7">
-            <div className="filter-panel">
-              <div className="flex items-end justify-between gap-6">
-                <div>
-                  <span className="eyebrow">Đã duyệt</span>
-                  <h2 className="font-serif text-3xl font-bold text-reunion-ink">Những lời nhắn đã gửi</h2>
-                </div>
-                <Button asChild variant="outline" className="hidden h-10 rounded-md text-[10px] font-bold uppercase tracking-widest sm:inline-flex">
-                  <Link to="/members">Xem bạn bè</Link>
+              <div className="sticky bottom-0 rounded-b-xl bg-white/95 pt-2 sm:static sm:bg-transparent sm:pt-0">
+                <Button
+                  type="submit"
+                  disabled={createFeeling.isPending}
+                  className="h-12 w-full rounded-md bg-reunion-forest text-[10px] font-bold uppercase tracking-widest text-white hover:bg-emerald-900"
+                >
+                  <Send className="h-4 w-4" />
+                  {createFeeling.isPending ? 'Đang gửi...' : 'Gửi vào lưu bút'}
                 </Button>
               </div>
-
-              {isLoadingFeelings ? (
-                <div className="flex flex-wrap gap-2">
-                  {[1, 2, 3, 4].map((item) => (
-                    <Skeleton key={item} className="h-10 w-24 rounded-md" />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  <FeelingFilterButton
-                    label="Tất cả"
-                    count={feelings?.length ?? 0}
-                    active={feelingFilter === 'all'}
-                    onClick={() => setFeelingFilter('all')}
-                  />
-                  <FeelingFilterButton
-                    label="Cả lớp"
-                    count={countFeelings(feelings, 'general')}
-                    active={feelingFilter === 'general'}
-                    onClick={() => setFeelingFilter('general')}
-                  />
-                  <FeelingFilterButton
-                    label="Thầy cô"
-                    count={countFeelings(feelings, 'teacher')}
-                    active={feelingFilter === 'teacher'}
-                    onClick={() => setFeelingFilter('teacher')}
-                  />
-                  <FeelingFilterButton
-                    label="Bạn bè"
-                    count={countFeelings(feelings, 'member')}
-                    active={feelingFilter === 'member'}
-                    onClick={() => setFeelingFilter('member')}
-                  />
-                </div>
-              )}
-            </div>
-
-            {feelingsError ? (
-              <div className="rounded-lg border border-red-100 bg-white p-8 text-center text-sm text-red-700">
-                Không tải được danh sách lời nhắn đã duyệt.
-              </div>
-            ) : isLoadingFeelings ? (
-              <div className="space-y-5">
-                {[1, 2, 3].map((item) => (
-                  <div key={item} className="rounded-lg border border-slate-100 bg-white p-6">
-                    <Skeleton className="mb-4 h-5 w-1/3" />
-                    <Skeleton className="mb-3 h-4 w-full" />
-                    <Skeleton className="h-4 w-2/3" />
-                  </div>
-                ))}
-              </div>
-            ) : visibleFeelings.length ? (
-              <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-                {visibleFeelings.map((feeling) => (
-                  <FeelingCard key={feeling.id} feeling={feeling} />
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-lg border border-dashed border-slate-200 bg-white/70 p-7 text-center">
-                <UserRoundCheck className="mx-auto mb-4 h-8 w-8 text-slate-300" />
-                <p className="font-serif italic text-slate-400">Chưa có lời nhắn nào được duyệt.</p>
-              </div>
-            )}
+            </form>
           </div>
-        </div>
-      </section>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -408,8 +536,8 @@ function FeelingFilterButton({
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
-    <label className="block space-y-3">
-      <span className="ml-1 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">{label}</span>
+    <label className="block space-y-2.5 sm:space-y-3">
+      <span className="ml-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 sm:text-[11px]">{label}</span>
       {children}
       {error && <span className="block text-xs font-medium text-red-600">{error}</span>}
     </label>
@@ -429,7 +557,7 @@ function TargetButton({
     <button
       type="button"
       className={cn(
-        'h-10 rounded-md border text-[10px] font-bold uppercase tracking-widest transition',
+        'h-10 rounded-md border px-1 text-[9px] font-bold uppercase tracking-wider transition sm:text-[10px] sm:tracking-widest',
         active
           ? 'border-reunion-forest bg-reunion-forest text-white'
           : 'border-slate-200 bg-white text-slate-500 hover:border-reunion-gold hover:text-reunion-forest'
@@ -446,13 +574,22 @@ function FeelingCard({ feeling }: { feeling: Feeling }) {
   const target = getFeelingTarget(feeling)
   const content = normalizeText(feeling.content)
   const shouldClamp = content.length > 180
+  const createdAt = formatFeelingTime(feeling.created)
 
   return (
     <article className="flex min-h-52 flex-col rounded-lg border border-slate-100 bg-white p-5 shadow-sm">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="font-serif text-xl font-bold text-reunion-ink">{feeling.author_name}</h3>
-          <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-reunion-gold">{target}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-reunion-gold">{target}</p>
+            {createdAt && (
+              <p className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400">
+                <PenLine className="h-3.5 w-3.5 text-reunion-gold/70" />
+                {createdAt}
+              </p>
+            )}
+          </div>
         </div>
         <MessageSquareQuote className="h-5 w-5 text-reunion-gold/60" />
       </div>
@@ -504,6 +641,10 @@ function countFeelings(feelings: Feeling[] | undefined, targetType: FeelingFilte
 }
 
 function getFeelingTarget(feeling: Feeling) {
+  if (feeling.target_type === 'class') {
+    return feeling.expand?.class_target?.name ? `Gửi lớp ${feeling.expand.class_target.name}` : 'Gửi cả lớp'
+  }
+
   if (feeling.target_type === 'teacher') {
     return feeling.expand?.teacher_target?.name ? `Gửi ${feeling.expand.teacher_target.name}` : 'Gửi thầy cô'
   }
@@ -512,5 +653,50 @@ function getFeelingTarget(feeling: Feeling) {
     return feeling.expand?.member_target?.name ? `Gửi ${feeling.expand.member_target.name}` : 'Gửi bạn bè'
   }
 
-  return 'Gửi cả lớp'
+  return 'Gửi tất cả'
+}
+
+function getTargetPlaceholder(targetType: FeelingFormValues['target_type']) {
+  if (targetType === 'class') return 'Chọn lớp'
+  if (targetType === 'teacher') return 'Chọn thầy cô'
+  if (targetType === 'member') return 'Chọn bạn bè'
+  return 'Chọn người nhận'
+}
+
+function getTargetSearchPlaceholder(targetType: FeelingFormValues['target_type']) {
+  if (targetType === 'class') return 'Tìm lớp...'
+  if (targetType === 'teacher') return 'Tìm thầy cô...'
+  if (targetType === 'member') return 'Tìm bạn bè...'
+  return 'Tìm người nhận...'
+}
+
+function getTargetGroupHeading(targetType: FeelingFormValues['target_type']) {
+  if (targetType === 'class') return 'Lớp'
+  if (targetType === 'teacher') return 'Thầy cô'
+  if (targetType === 'member') return 'Bạn bè'
+  return 'Người nhận'
+}
+
+function formatFeelingTime(value?: string) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+
+  return formatRelativeTime(date)
+}
+
+function formatRelativeTime(date: Date) {
+  const diffInSeconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000))
+  const diffInMinutes = Math.floor(diffInSeconds / 60)
+  const diffInHours = Math.floor(diffInMinutes / 60)
+  const diffInDays = Math.floor(diffInHours / 24)
+  const diffInMonths = Math.floor(diffInDays / 30)
+  const diffInYears = Math.floor(diffInDays / 365)
+
+  if (diffInMinutes < 1) return 'Vừa xong'
+  if (diffInMinutes < 60) return `${diffInMinutes} phút trước`
+  if (diffInHours < 24) return `${diffInHours} giờ trước`
+  if (diffInDays < 30) return `${diffInDays} ngày trước`
+  if (diffInMonths < 12) return `${diffInMonths} tháng trước`
+  return `${diffInYears} năm trước`
 }

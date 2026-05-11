@@ -66,7 +66,7 @@ function GalleryPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="min-h-screen bg-reunion-paper">
       <section className="page-hero">
         <div className="section-container grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-end">
           <div className="max-w-3xl space-y-3 lg:col-span-8">

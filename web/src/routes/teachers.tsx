@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createFileRoute, Link, Outlet, useMatchRoute } from '@tanstack/react-router'
+import { BookOpen, GraduationCap, Heart } from 'lucide-react'
+
+import { Skeleton } from '@/components/ui/skeleton'
 import { useTeachers } from '@/hooks/useTeachers'
 import { getFileUrl } from '@/lib/pocketbase'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Button } from '@/components/ui/button'
-import { GraduationCap, Search } from 'lucide-react'
-import type { Teacher } from '@/types'
-import { normalizeSearch } from '@/lib/utils'
+import { normalizeText } from '@/lib/utils'
 import { seo } from '@/lib/seo'
+import type { Teacher } from '@/types'
 
 const tributeQuotes = [
   'Ơn thầy cô là ngọn đèn lặng lẽ, soi chúng em qua những năm tháng đầu đời.',
@@ -33,8 +33,6 @@ export const Route = createFileRoute('/teachers')({
 function TeachersPage() {
   const matchRoute = useMatchRoute()
   const { data: teachers, isLoading, error } = useTeachers()
-  const [selectedSubject, setSelectedSubject] = useState('Tất cả')
-  const [searchTerm, setSearchTerm] = useState('')
   const [quoteIndex, setQuoteIndex] = useState(0)
   const [isQuoteVisible, setIsQuoteVisible] = useState(true)
   const isDetailRoute = Boolean(matchRoute({ to: '/teachers/$teacherId' }))
@@ -50,27 +48,6 @@ function TeachersPage() {
 
     return () => window.clearInterval(interval)
   }, [])
-
-  const subjects = useMemo(() => {
-    const uniqueSubjects = new Set(
-      teachers
-        ?.map((teacher) => normalizeValue(teacher.subject))
-        .filter(Boolean)
-    )
-
-    return ['Tất cả', ...Array.from(uniqueSubjects)]
-  }, [teachers])
-
-  const visibleTeachers = useMemo(() => {
-    if (!teachers) return []
-    const normalizedSearch = normalizeSearch(searchTerm)
-
-    return teachers.filter((teacher) => {
-      const matchesSubject = selectedSubject === 'Tất cả' || normalizeValue(teacher.subject) === selectedSubject
-      const matchesName = !normalizedSearch || normalizeSearch(teacher.name).includes(normalizedSearch)
-      return matchesSubject && matchesName
-    })
-  }, [selectedSubject, searchTerm, teachers])
 
   if (isDetailRoute) {
     return <Outlet />
@@ -90,8 +67,16 @@ function TeachersPage() {
     )
   }
 
+  if (isLoading) {
+    return <TeachersListSkeleton />
+  }
+
+  if (!teachers?.length) {
+    return <EmptyTeachers />
+  }
+
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="bg-reunion-paper">
       <section className="page-hero">
         <div className="section-container grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-end">
           <div className="max-w-3xl space-y-3 lg:col-span-8">
@@ -104,7 +89,7 @@ function TeachersPage() {
             </p>
           </div>
 
-          <div className="soft-panel relative overflow-hidden p-6 lg:col-span-4 md:p-7">
+          <div className="soft-panel relative overflow-hidden p-6 md:p-7 lg:col-span-4">
             <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full border border-reunion-gold/20" />
             <span className="mb-4 block text-[10px] font-bold uppercase tracking-[0.28em] text-reunion-gold">
               Tri ân
@@ -120,146 +105,121 @@ function TeachersPage() {
         </div>
       </section>
 
-      <section className="content-section">
-        <div className="section-container">
-          <div className="filter-panel">
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-              <div className="max-w-xl space-y-3">
-                <div className="flex items-center gap-3 text-reunion-gold">
-                  <Search className="h-4 w-4" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Danh sách tri ân</span>
-                </div>
-                <label className="sr-only" htmlFor="teacher-search">Tìm theo tên</label>
-                <div className="relative max-w-lg">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-300" />
-                  <input
-                    id="teacher-search"
-                    type="search"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Nhập tên thầy cô muốn tìm..."
-                    className="h-12 w-full rounded-lg border border-slate-200 bg-white pl-11 pr-4 text-sm font-medium text-reunion-ink outline-none transition focus:border-reunion-gold focus:ring-2 focus:ring-reunion-gold/10"
-                  />
-                </div>
-              </div>
-
-              {(searchTerm || selectedSubject !== 'Tất cả') && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-10 rounded-md px-4 text-[10px] font-bold uppercase tracking-widest"
-                  onClick={() => { setSearchTerm(''); setSelectedSubject('Tất cả') }}
-                >
-                  Xóa bộ lọc
-                </Button>
-              )}
-            </div>
-
-            {isLoading ? (
-              <div className="flex flex-wrap gap-2">
-                {[1, 2, 3].map((item) => (
-                  <Skeleton key={item} className="h-10 w-24 rounded-md" />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {subjects.map((subject) => (
-                  <Button
-                    key={subject}
-                    type="button"
-                    variant={selectedSubject === subject ? 'default' : 'outline'}
-                    className="h-10 rounded-md px-4 text-[10px] font-bold uppercase tracking-widest"
-                    onClick={() => setSelectedSubject(subject)}
-                  >
-                    {subject}
-                  </Button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {isLoading ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="space-y-6">
-                  <Skeleton className="aspect-[4/5] w-full rounded-lg" />
-                  <Skeleton className="h-8 w-1/2" />
-                  <Skeleton className="h-4 w-full" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {visibleTeachers.map((teacher) => (
-                <TeacherCard key={teacher.id} teacher={teacher} />
-              ))}
-              {visibleTeachers.length === 0 && (
-                <EmptyTeachers selectedSubject={selectedSubject} />
-              )}
-            </div>
-          )}
-        </div>
+      <section>
+        {teachers.map((teacher, index) => (
+          <TeacherSection
+            key={teacher.id}
+            teacher={teacher}
+            index={index}
+            total={teachers.length}
+            variant={index % 2 === 0 ? 'paper' : 'white'}
+          />
+        ))}
       </section>
     </div>
   )
 }
 
-function TeacherCard({ teacher }: { teacher: Teacher }) {
+function TeacherSection({
+  teacher,
+  index,
+  total,
+  variant,
+}: {
+  teacher: Teacher
+  index: number
+  total: number
+  variant: 'paper' | 'white'
+}) {
   const avatarUrl = getFileUrl('teachers', teacher.id, teacher.avatar)
-  const subject = normalizeValue(teacher.subject) || 'Đang cập nhật môn học'
-  const teacherInitial = teacher.name.trim().substring(0, 1) || 'T'
+  const subject = teacher.subject?.trim() || 'Đang cập nhật môn học'
+  const period = teacher.period?.trim() || 'Đang cập nhật giai đoạn'
+  const tribute = normalizeText(teacher.tribute) || 'Lời tri ân đang được cập nhật...'
+  const initial = teacher.name.trim().substring(0, 1) || 'T'
 
   return (
-    <Link
-      to="/teachers/$teacherId"
-      params={{ teacherId: teacher.id }}
-      className="journal-card group block cursor-pointer border-2 border-slate-50 text-left"
-    >
-      <div className="aspect-[4/5] bg-slate-100 relative overflow-hidden">
-        {avatarUrl ? (
-          <img
-            src={avatarUrl}
-            alt={teacher.name}
-            className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-6xl font-serif font-bold text-slate-200 uppercase">
-            {teacherInitial}
+    <section className={`${variant === 'paper' ? 'bg-reunion-paper' : 'bg-white/70'} py-10 md:py-14`}>
+      <div className="section-container w-full">
+        <div className="mb-5 md:mb-6">
+          <div className="w-fit rounded-full border border-reunion-gold/20 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">
+            {String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
           </div>
-        )}
-        <div className="absolute top-4 right-4 px-2 py-1 rounded-none bg-white/90 backdrop-blur shadow-sm text-[8px] font-bold text-reunion-forest uppercase tracking-widest border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
-          Chi tiết
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-center">
+          <div className="lg:col-span-5">
+            <Link
+              to="/teachers/$teacherId"
+              params={{ teacherId: teacher.id }}
+              className="group block overflow-hidden rounded-lg border-4 border-white bg-slate-100 shadow-xl md:border-8 lg:max-h-[68svh]"
+            >
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={teacher.name}
+                  className="aspect-[4/5] h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                />
+              ) : (
+                <div className="flex aspect-[4/5] items-center justify-center text-8xl font-serif font-bold text-slate-200">
+                  {initial}
+                </div>
+              )}
+            </Link>
+          </div>
+
+          <div className="flex flex-col justify-center space-y-5 lg:col-span-7 lg:space-y-6">
+            <div className="max-w-3xl space-y-3 md:space-y-4">
+              <span className="eyebrow">{subject}</span>
+              <h2 className="font-serif text-4xl font-bold leading-tight text-reunion-ink md:text-6xl lg:text-7xl">
+                {teacher.name}
+              </h2>
+              <div className="h-1 w-16 bg-reunion-gold" />
+            </div>
+
+            <div className="flex flex-wrap gap-3 text-sm text-slate-600 md:gap-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2">
+                <BookOpen className="h-4 w-4 text-reunion-gold" />
+                {subject}
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2">
+                <GraduationCap className="h-4 w-4 text-reunion-gold" />
+                {period}
+              </div>
+            </div>
+
+            <div className="relative max-w-3xl">
+              <Heart className="absolute -left-4 -top-4 h-10 w-10 text-reunion-gold/10" />
+              <p className="pl-3 font-serif text-lg italic leading-relaxed text-slate-600 md:text-2xl lg:text-3xl">
+                "{tribute}"
+              </p>
+            </div>
+          </div>
         </div>
       </div>
-
-      <div className="p-6 space-y-2">
-        <h3 className="font-serif text-lg font-bold text-reunion-ink group-hover:text-reunion-forest transition-colors">
-          {teacher.name}
-        </h3>
-        <p className="text-[10px] text-reunion-gold font-bold uppercase tracking-widest">
-          {subject}
-        </p>
-      </div>
-    </Link>
+    </section>
   )
 }
 
-function EmptyTeachers({ selectedSubject }: { selectedSubject: string }) {
-  const message =
-    selectedSubject === 'Tất cả'
-      ? 'Chưa có dữ liệu thầy cô nào được cập nhật.'
-      : `Chưa có thầy cô thuộc môn ${selectedSubject}.`
-
+function TeachersListSkeleton() {
   return (
-    <div className="col-span-full py-14 text-center">
-      <div className="mx-auto max-w-md space-y-4 rounded-lg border border-dashed border-slate-200 bg-white/70 p-7">
-        <GraduationCap className="mx-auto h-8 w-8 text-slate-300" />
-        <p className="font-serif italic text-slate-400">{message}</p>
+    <div className="section-container grid min-h-[calc(100svh-5rem)] grid-cols-1 gap-8 py-12 lg:grid-cols-12 lg:items-center">
+      <Skeleton className="aspect-[4/5] rounded-lg lg:col-span-5" />
+      <div className="space-y-6 lg:col-span-7">
+        <Skeleton className="h-6 w-40 rounded-md" />
+        <Skeleton className="h-20 w-3/4 rounded-md" />
+        <Skeleton className="h-32 w-full rounded-md" />
       </div>
     </div>
   )
 }
 
-function normalizeValue(value?: string) {
-  return value?.trim() ?? ''
+function EmptyTeachers() {
+  return (
+    <div className="section-container py-14 text-center">
+      <div className="mx-auto max-w-md space-y-4 rounded-lg border border-dashed border-slate-200 bg-white/70 p-7">
+        <GraduationCap className="mx-auto h-8 w-8 text-slate-300" />
+        <p className="font-serif italic text-slate-400">Chưa có dữ liệu thầy cô nào được cập nhật.</p>
+      </div>
+    </div>
+  )
 }

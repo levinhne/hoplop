@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { pb } from '@/lib/pocketbase';
 import type { Feeling } from '@/types';
 
-export type FeelingTargetType = 'general' | 'teacher' | 'member';
+export type FeelingTargetType = 'general' | 'class' | 'teacher' | 'member';
 
 export interface CreateFeelingInput {
   author_name: string;
@@ -17,7 +17,7 @@ export const useFeelings = () => {
     queryFn: async () => {
       const records = await pb.collection('feelings').getFullList<Feeling>({
         filter: 'is_public = true && is_approved = true',
-        expand: 'teacher_target,member_target',
+        expand: 'class_target,teacher_target,member_target',
         sort: '-created',
       });
 
@@ -45,6 +45,10 @@ export const useCreateFeeling = () => {
 
       if (input.target_type === 'member' && input.target_id) {
         formData.append('member_target', input.target_id);
+      }
+
+      if (input.target_type === 'class' && input.target_id) {
+        formData.append('class_target', input.target_id);
       }
 
       return pb.collection('feelings').create<Feeling>(formData);

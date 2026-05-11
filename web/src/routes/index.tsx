@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -11,7 +11,7 @@ import { useMembers } from '@/hooks/useMembers'
 import { useStats } from '@/hooks/useStats'
 import { useTeachers } from '@/hooks/useTeachers'
 import { seo } from '@/lib/seo'
-import { ArrowRight, MessageSquareQuote, PenLine } from 'lucide-react'
+import { ArrowRight, ImagePlus, MessageSquareQuote, PenLine } from 'lucide-react'
 import type { Feeling, Member, Teacher } from '@/types'
 
 const heroTypingLines = [
@@ -59,7 +59,7 @@ function HomeComponent() {
   const { data: feelings, isLoading: isLoadingFeelings } = useFeelings()
   const { data: gallery, isLoading: isLoadingGallery } = useGallery()
 
-  const previewMembers = members?.slice(0, 4) ?? []
+  const previewMembers = useMemo(() => getRandomItems(members ?? [], 4), [members])
   const previewTeachers = teachers?.slice(0, 4) ?? []
   const latestFeelings = feelings?.slice(0, 12) ?? []
   const sliderImages = gallery?.slice(0, 6) ?? []
@@ -136,11 +136,14 @@ function HomeComponent() {
               }`}
               aria-hidden={!showHeroActions}
             >
-              <Button asChild className="h-11 rounded-none bg-reunion-gold px-6 text-[11px] font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:translate-x-1 hover:bg-[#9a7947]">
+              <Button asChild className="h-11 rounded-md bg-reunion-gold px-6 text-[11px] font-bold uppercase tracking-widest text-white shadow-lg transition-all hover:translate-x-1 hover:bg-[#9a7947]">
                 <Link to="/members">Xem thành viên</Link>
               </Button>
-              <Button asChild variant="outline" className="h-11 rounded-none border-2 border-white/80 bg-white/10 px-6 text-[11px] font-bold uppercase tracking-widest text-white backdrop-blur-sm transition-all hover:bg-white hover:text-reunion-forest">
+              <Button asChild variant="outline" className="h-11 rounded-md border-2 border-white/80 bg-white/10 px-6 text-[11px] font-bold uppercase tracking-widest text-white backdrop-blur-sm transition-all hover:bg-white hover:text-reunion-forest">
                 <Link to="/feelings">Viết lời nhắn</Link>
+              </Button>
+              <Button asChild variant="outline" className="h-11 rounded-md border-2 border-white/80 bg-white/10 px-6 text-[11px] font-bold uppercase tracking-widest text-white backdrop-blur-sm transition-all hover:bg-white hover:text-reunion-forest">
+                <Link to="/avatar">Tạo avatar</Link>
               </Button>
             </div>
 
@@ -175,7 +178,7 @@ function HomeComponent() {
           {isLoadingMembers ? (
             <PreviewSkeleton />
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {previewMembers.map((member) => (
                 <MemberPreviewCard key={member.id} member={member} />
               ))}
@@ -197,7 +200,7 @@ function HomeComponent() {
           {isLoadingTeachers ? (
             <PreviewSkeleton />
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {previewTeachers.map((teacher) => (
                 <TeacherPreviewCard key={teacher.id} teacher={teacher} />
               ))}
@@ -238,16 +241,22 @@ function HomeComponent() {
         <div className="section-container">
           <div className="grid grid-cols-1 items-center gap-7 border-y border-reunion-gold/20 py-10 md:gap-8 md:py-12 lg:grid-cols-12">
             <div className="space-y-4 md:space-y-5 lg:col-span-8">
-              <span className="eyebrow">Gửi một dòng hồi ức</span>
+              <span className="eyebrow">Gửi một dấu hiệu gặp lại</span>
               <h2 className="text-3xl font-serif font-bold text-reunion-ink md:text-4xl">
-                Có điều gì muốn nhắn tới lớp, bạn bè hay thầy cô?
+                Đổi avatar và viết một dòng nhắn cho ngày họp lớp.
               </h2>
               <p className="max-w-2xl font-serif italic text-sm md:text-base leading-relaxed text-slate-500">
-                Form lưu bút đầy đủ nằm ở trang riêng để bạn chọn người nhận, viết nội dung và gửi vào hàng chờ duyệt.
+                Tạo ảnh đại diện có frame Giao Lộ Khối 9, rồi ghé trang lưu bút để gửi lời nhắn tới lớp, bạn bè hay thầy cô.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:col-span-4 lg:justify-end">
-              <Button asChild className="h-12 rounded-none bg-reunion-forest px-7 text-xs font-bold uppercase tracking-widest text-white hover:bg-emerald-900">
+              <Button asChild variant="outline" className="h-12 rounded-md border-reunion-forest px-7 text-xs font-bold uppercase tracking-widest text-reunion-forest hover:bg-reunion-forest hover:text-white">
+                <Link to="/avatar">
+                  <ImagePlus className="h-4 w-4" />
+                  Tạo avatar
+                </Link>
+              </Button>
+              <Button asChild className="h-12 rounded-md bg-reunion-forest px-7 text-xs font-bold uppercase tracking-widest text-white hover:bg-emerald-900">
                 <Link to="/feelings">
                   <PenLine className="h-4 w-4" />
                   Mở trang lưu bút
@@ -274,7 +283,7 @@ function HomeComponent() {
           </div>
 
           <div className="mt-10 md:mt-12 flex justify-center">
-            <Button asChild className="h-12 md:h-14 rounded-none bg-reunion-forest px-8 md:px-10 text-xs font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-all hover:scale-[1.02] hover:bg-emerald-900 active:scale-95">
+            <Button asChild className="h-12 rounded-md bg-reunion-forest px-8 text-xs font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-all hover:scale-[1.02] hover:bg-emerald-900 active:scale-95 md:h-14 md:px-10">
               <Link to="/rsvp">
                 Tham gia họp lớp ngay
                 <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5" />
@@ -431,12 +440,15 @@ function SectionHeader({
 
 function PreviewSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {[1, 2, 3, 4].map((item) => (
-        <div key={item} className="space-y-4">
-          <Skeleton className="aspect-[4/5] w-full rounded-xl" />
-          <Skeleton className="h-6 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
+        <div key={item} className="flex overflow-hidden rounded-lg border border-slate-200/70 bg-white">
+          <Skeleton className="aspect-[4/5] w-1/2 shrink-0 rounded-none" />
+          <div className="flex flex-1 flex-col justify-center space-y-3 p-5 md:p-6">
+            <Skeleton className="h-3 w-1/2" />
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-12 w-full" />
+          </div>
         </div>
       ))}
     </div>
@@ -465,10 +477,12 @@ function FeelingMarqueeSkeleton() {
 function MemberPreviewCard({ member }: { member: Member }) {
   const thumbUrl = getFileUrl('members', member.id, member.thumb)
   const initial = member.name.trim().substring(0, 1) || 'B'
+  const className = getMemberClassName(member, 'Lớp 9A')
+  const bio = normalizeText(member.bio) || 'Chưa cập nhật đôi dòng giới thiệu.'
 
   return (
-    <Link to="/members" className="journal-card group block cursor-pointer border-2 border-slate-50 text-left">
-      <div className="relative aspect-[4/5] overflow-hidden bg-slate-100">
+    <Link to="/members" className="journal-card group flex cursor-pointer border-2 border-slate-50 text-left">
+      <div className="relative aspect-[4/5] w-1/2 shrink-0 overflow-hidden bg-slate-100">
         {thumbUrl ? (
           <img
             src={thumbUrl}
@@ -484,12 +498,15 @@ function MemberPreviewCard({ member }: { member: Member }) {
           Chi tiết
         </div>
       </div>
-      <div className="space-y-2 p-5">
-        <h3 className="font-serif text-lg font-bold text-reunion-ink transition-colors group-hover:text-reunion-forest">
+      <div className="flex min-w-0 flex-1 flex-col justify-center space-y-3 p-5 md:p-6">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-reunion-gold">
+          {className}
+        </p>
+        <h3 className="break-words font-serif text-lg font-bold leading-tight text-reunion-ink transition-colors group-hover:text-reunion-forest md:text-xl">
           {member.name}
         </h3>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-reunion-gold">
-          {getMemberClassName(member, 'Lớp 9A')}
+        <p className="line-clamp-3 text-sm leading-relaxed text-slate-500">
+          {bio}
         </p>
       </div>
     </Link>
@@ -499,10 +516,11 @@ function MemberPreviewCard({ member }: { member: Member }) {
 function TeacherPreviewCard({ teacher }: { teacher: Teacher }) {
   const avatarUrl = getFileUrl('teachers', teacher.id, teacher.avatar)
   const initial = teacher.name.trim().substring(0, 1) || 'T'
+  const tribute = normalizeText(teacher.tribute) || 'Lời tri ân đang được cập nhật.'
 
   return (
-    <Link to="/teachers" className="journal-card group block cursor-pointer border-2 border-slate-50 text-left">
-      <div className="relative aspect-[4/5] overflow-hidden bg-slate-100">
+    <Link to="/teachers" className="journal-card group flex cursor-pointer border-2 border-slate-50 text-left">
+      <div className="relative aspect-[4/5] w-1/2 shrink-0 overflow-hidden bg-slate-100">
         {avatarUrl ? (
           <img
             src={avatarUrl}
@@ -518,16 +536,29 @@ function TeacherPreviewCard({ teacher }: { teacher: Teacher }) {
           Chi tiết
         </div>
       </div>
-      <div className="space-y-2 p-5">
-        <h3 className="font-serif text-lg font-bold text-reunion-ink transition-colors group-hover:text-reunion-forest">
-          {teacher.name}
-        </h3>
+      <div className="flex min-w-0 flex-1 flex-col justify-center space-y-3 p-5 md:p-6">
         <p className="text-[10px] font-bold uppercase tracking-widest text-reunion-gold">
           {teacher.subject || 'Đang cập nhật'}
+        </p>
+        <h3 className="break-words font-serif text-lg font-bold leading-tight text-reunion-ink transition-colors group-hover:text-reunion-forest md:text-xl">
+          {teacher.name}
+        </h3>
+        <p className="line-clamp-3 text-sm leading-relaxed text-slate-500">
+          {tribute}
         </p>
       </div>
     </Link>
   )
+}
+
+function getRandomItems<T>(items: T[], limit: number) {
+  if (items.length <= limit) return items
+
+  return [...items]
+    .map((item) => ({ item, rank: Math.random() }))
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, limit)
+    .map(({ item }) => item)
 }
 
 function FeelingMarquee({
@@ -573,6 +604,10 @@ function FeelingPreviewCard({ feeling }: { feeling: Feeling }) {
 }
 
 function getFeelingTarget(feeling: Feeling) {
+  if (feeling.target_type === 'class') {
+    return feeling.expand?.class_target?.name ? `Gửi lớp ${feeling.expand.class_target.name}` : 'Gửi cả lớp'
+  }
+
   if (feeling.target_type === 'teacher') {
     return feeling.expand?.teacher_target?.name ? `Gửi ${feeling.expand.teacher_target.name}` : 'Gửi thầy cô'
   }
@@ -581,5 +616,5 @@ function getFeelingTarget(feeling: Feeling) {
     return feeling.expand?.member_target?.name ? `Gửi ${feeling.expand.member_target.name}` : 'Gửi bạn bè'
   }
 
-  return 'Gửi cả lớp'
+  return 'Gửi tất cả'
 }

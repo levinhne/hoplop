@@ -54,7 +54,8 @@ export interface Feeling {
   id: string;
   author_name: string;
   content: string;
-  target_type: 'general' | 'teacher' | 'member';
+  target_type: 'general' | 'class' | 'teacher' | 'member';
+  class_target?: string;
   teacher_target?: string;
   member_target?: string;
   attachment: string;
@@ -63,6 +64,7 @@ export interface Feeling {
   created: string;
   updated: string;
   expand?: {
+    class_target?: ClassGroup;
     teacher_target?: Teacher;
     member_target?: Member;
   };

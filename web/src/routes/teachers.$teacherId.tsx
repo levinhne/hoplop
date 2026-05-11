@@ -1,13 +1,12 @@
-import { useMemo } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BookOpen, GraduationCap, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useTeachers } from '@/hooks/useTeachers'
 import { getFileUrl, pb } from '@/lib/pocketbase'
 import { normalizeText } from '@/lib/utils'
 import { seo } from '@/lib/seo'
+import { TargetFeelingsBox } from '@/components/target-feelings-box'
 import type { Teacher } from '@/types'
 
 export const Route = createFileRoute('/teachers/$teacherId')({
@@ -22,7 +21,6 @@ export const Route = createFileRoute('/teachers/$teacherId')({
 
 function TeacherDetailPage() {
   const { teacherId } = Route.useParams()
-  const { data: teachers, isLoading: isLoadingTeachers } = useTeachers()
 
   const { data: teacher, isLoading, error } = useQuery({
     queryKey: ['teachers', teacherId],
@@ -30,15 +28,6 @@ function TeacherDetailPage() {
       return pb.collection('teachers').getOne<Teacher>(teacherId)
     },
   })
-
-  const relatedTeachers = useMemo(() => {
-    if (!teacher || !teachers) return []
-
-    return teachers
-      .filter((item) => item.id !== teacher.id)
-      .sort((a, b) => stableScore(teacher.id, a.id) - stableScore(teacher.id, b.id))
-      .slice(0, 4)
-  }, [teacher, teachers])
 
   if (isLoading) {
     return <DetailSkeleton />
@@ -102,95 +91,14 @@ function TeacherDetailPage() {
         </div>
       </section>
 
-      <section className="border-t border-reunion-gold/10 bg-reunion-paper py-10 md:py-12">
-        <div className="section-container">
-          <div className="mb-8 space-y-3">
-            <span className="eyebrow">Tri ân</span>
-            <h2 className="font-serif text-3xl font-bold text-reunion-ink md:text-4xl">Thầy cô khác</h2>
-          </div>
-
-          {isLoadingTeachers ? (
-            <RelatedSkeleton />
-          ) : relatedTeachers.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {relatedTeachers.map((item) => (
-                <RelatedTeacherCard key={item.id} teacher={item} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-lg border border-dashed border-slate-200 bg-white/70 p-7 text-center">
-              <GraduationCap className="mx-auto mb-4 h-8 w-8 text-slate-300" />
-              <p className="font-serif italic text-slate-400">Chưa có thầy cô khác.</p>
-            </div>
-          )}
-        </div>
-      </section>
+      <TargetFeelingsBox
+        targetId={teacher.id}
+        targetType="teacher"
+        title={`Lưu bút viết về ${teacher.name}`}
+        emptyMessage="Chưa có lưu bút nào viết riêng cho thầy cô."
+      />
     </div>
   )
-}
-
-function RelatedTeacherCard({ teacher }: { teacher: Teacher }) {
-  const avatarUrl = getFileUrl('teachers', teacher.id, teacher.avatar)
-  const subject = teacher.subject?.trim() || 'Đang cập nhật môn học'
-  const initial = teacher.name.trim().substring(0, 1) || 'T'
-
-  return (
-    <Link
-      to="/teachers/$teacherId"
-      params={{ teacherId: teacher.id }}
-      className="journal-card group block cursor-pointer border-2 border-slate-50 text-left"
-    >
-      <div className="relative aspect-[4/5] overflow-hidden bg-slate-100">
-        {avatarUrl ? (
-          <img
-            src={avatarUrl}
-            alt={teacher.name}
-            className="h-full w-full object-cover grayscale-[0.2] transition-all duration-500 group-hover:scale-105 group-hover:grayscale-0"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-6xl font-serif font-bold uppercase text-slate-200">
-            {initial}
-          </div>
-        )}
-        <div className="absolute top-4 right-4 border border-slate-100 bg-white/90 px-2 py-1 text-[8px] font-bold uppercase tracking-widest text-reunion-forest opacity-0 shadow-sm backdrop-blur transition-opacity group-hover:opacity-100">
-          Chi tiết
-        </div>
-      </div>
-      <div className="space-y-2 p-6">
-        <h3 className="font-serif text-lg font-bold text-reunion-ink transition-colors group-hover:text-reunion-forest">
-          {teacher.name}
-        </h3>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-reunion-gold">
-          {subject}
-        </p>
-      </div>
-    </Link>
-  )
-}
-
-function RelatedSkeleton() {
-  return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-      {[1, 2, 3, 4].map((item) => (
-        <div key={item} className="space-y-4">
-          <Skeleton className="aspect-[4/5] w-full rounded-xl" />
-          <Skeleton className="h-6 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function stableScore(seed: string, value: string) {
-  let hash = 0
-  const input = `${seed}:${value}`
-
-  for (let index = 0; index < input.length; index += 1) {
-    hash = (hash * 31 + input.charCodeAt(index)) >>> 0
-  }
-
-  return hash
 }
 
 function DetailSkeleton() {

@@ -9,6 +9,7 @@ import { getMemberClassName } from '@/lib/members'
 import { getFileUrl, pb } from '@/lib/pocketbase'
 import { normalizeText } from '@/lib/utils'
 import { seo } from '@/lib/seo'
+import { TargetFeelingsBox } from '@/components/target-feelings-box'
 import type { Member } from '@/types'
 
 export const Route = createFileRoute('/members/$memberId')({
@@ -115,6 +116,13 @@ function MemberDetailPage() {
         </div>
       </section>
 
+      <TargetFeelingsBox
+        targetId={member.id}
+        targetType="member"
+        title={`Lưu bút viết về ${member.name}`}
+        emptyMessage="Chưa có lưu bút nào viết riêng cho bạn này."
+      />
+
       <section className="border-t border-reunion-gold/10 bg-reunion-paper py-10 md:py-12">
         <div className="section-container">
           <div className="mb-8 space-y-3">
@@ -125,7 +133,7 @@ function MemberDetailPage() {
           {isLoadingMembers ? (
             <RelatedSkeleton />
           ) : relatedMembers.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {relatedMembers.map((item) => (
                 <RelatedMemberCard key={item.id} member={item} />
               ))}
@@ -146,14 +154,15 @@ function RelatedMemberCard({ member }: { member: Member }) {
   const thumbUrl = getFileUrl('members', member.id, member.thumb)
   const className = getMemberClassName(member, 'Lớp 9A')
   const initial = member.name.trim().substring(0, 1) || 'B'
+  const bio = normalizeText(member.bio) || 'Chưa cập nhật đôi dòng giới thiệu.'
 
   return (
     <Link
       to="/members/$memberId"
       params={{ memberId: member.id }}
-      className="journal-card group block cursor-pointer border-2 border-slate-50 text-left"
+      className="journal-card group flex cursor-pointer border-2 border-slate-50 text-left"
     >
-      <div className="relative aspect-[4/5] overflow-hidden bg-slate-100">
+      <div className="relative aspect-[4/5] w-1/2 shrink-0 overflow-hidden bg-slate-100">
         {thumbUrl ? (
           <img
             src={thumbUrl}
@@ -169,12 +178,15 @@ function RelatedMemberCard({ member }: { member: Member }) {
           Chi tiết
         </div>
       </div>
-      <div className="space-y-2 p-6">
-        <h3 className="font-serif text-lg font-bold text-reunion-ink transition-colors group-hover:text-reunion-forest">
-          {member.name}
-        </h3>
+      <div className="flex min-w-0 flex-1 flex-col justify-center space-y-3 p-5 md:p-6">
         <p className="text-[10px] font-bold uppercase tracking-widest text-reunion-gold">
           {className}
+        </p>
+        <h3 className="break-words font-serif text-lg font-bold leading-tight text-reunion-ink transition-colors group-hover:text-reunion-forest md:text-xl">
+          {member.name}
+        </h3>
+        <p className="line-clamp-3 text-sm leading-relaxed text-slate-500">
+          {bio}
         </p>
       </div>
     </Link>
@@ -183,12 +195,15 @@ function RelatedMemberCard({ member }: { member: Member }) {
 
 function RelatedSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {[1, 2, 3, 4].map((item) => (
-        <div key={item} className="space-y-4">
-          <Skeleton className="aspect-[4/5] w-full rounded-xl" />
-          <Skeleton className="h-6 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
+        <div key={item} className="flex overflow-hidden rounded-lg border border-slate-200/70 bg-white">
+          <Skeleton className="aspect-[4/5] w-1/2 shrink-0 rounded-none" />
+          <div className="flex flex-1 flex-col justify-center space-y-3 p-5 md:p-6">
+            <Skeleton className="h-3 w-1/2" />
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-12 w-full" />
+          </div>
         </div>
       ))}
     </div>

@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Search, UsersRound } from 'lucide-react'
 import type { Member } from '@/types'
-import { normalizeSearch } from '@/lib/utils'
+import { normalizeSearch, normalizeText } from '@/lib/utils'
 import { seo } from '@/lib/seo'
 
 export const Route = createFileRoute('/members')({
@@ -77,10 +77,10 @@ function MembersPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="min-h-screen bg-reunion-paper">
       <section className="page-hero">
         <div className="section-container grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-end">
-          <div className="max-w-2xl space-y-3 lg:col-span-8">
+          <div className="max-w-3xl space-y-3 lg:col-span-8">
             <span className="eyebrow">Tập thể 9A</span>
             <h1 className="font-serif text-4xl font-bold leading-tight text-reunion-ink md:text-5xl">Chúng mình của hiện tại</h1>
             <p className="font-serif text-base italic leading-relaxed text-slate-500 md:text-lg">
@@ -157,17 +157,20 @@ function MembersPage() {
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div key={i} className="space-y-4">
-                  <Skeleton className="aspect-[4/5] w-full rounded-xl" />
-                  <Skeleton className="h-6 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
+                <div key={i} className="flex overflow-hidden rounded-lg border border-slate-200/70 bg-white">
+                  <Skeleton className="aspect-[4/5] w-1/2 shrink-0 rounded-none" />
+                  <div className="flex flex-1 flex-col justify-center space-y-3 p-5 md:p-6">
+                    <Skeleton className="h-3 w-1/2" />
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-12 w-full" />
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {visibleMembers.map((member) => (
                 <MemberCard key={member.id} member={member} />
               ))}
@@ -186,35 +189,39 @@ function MemberCard({ member }: { member: Member }) {
   const thumbUrl = getFileUrl('members', member.id, member.thumb)
   const className = getMemberClassName(member, 'Lớp 9A')
   const memberInitial = member.name.trim().substring(0, 1) || 'B'
+  const bio = normalizeText(member.bio) || 'Chưa cập nhật đôi dòng giới thiệu.'
 
   return (
     <Link
       to="/members/$memberId"
       params={{ memberId: member.id }}
-      className="journal-card group block cursor-pointer border-2 border-slate-50 text-left"
+      className="journal-card group flex cursor-pointer border-2 border-slate-50 text-left"
     >
-      <div className="aspect-[4/5] bg-slate-100 relative overflow-hidden">
+      <div className="relative aspect-[4/5] w-1/2 shrink-0 overflow-hidden bg-slate-100">
         {thumbUrl ? (
           <img
             src={thumbUrl}
             alt={member.name}
-            className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+            className="h-full w-full object-cover grayscale-[0.2] transition-all duration-500 group-hover:scale-105 group-hover:grayscale-0"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-6xl font-serif font-bold text-slate-200 uppercase">
+          <div className="flex h-full w-full items-center justify-center text-6xl font-serif font-bold uppercase text-slate-200">
             {memberInitial}
           </div>
         )}
-        <div className="absolute top-4 right-4 px-2 py-1 rounded-none bg-white/90 backdrop-blur shadow-sm text-[8px] font-bold text-reunion-forest uppercase tracking-widest border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute top-4 right-4 border border-slate-100 bg-white/90 px-2 py-1 text-[8px] font-bold uppercase tracking-widest text-reunion-forest opacity-0 shadow-sm backdrop-blur transition-opacity group-hover:opacity-100">
           Chi tiết
         </div>
       </div>
-      <div className="p-6 space-y-2">
-        <h3 className="font-serif text-lg font-bold text-reunion-ink group-hover:text-reunion-forest transition-colors">
+      <div className="flex min-w-0 flex-1 flex-col justify-center space-y-3 p-5 md:p-6">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-reunion-gold">
+          {className}
+        </p>
+        <h3 className="break-words font-serif text-lg font-bold leading-tight text-reunion-ink transition-colors group-hover:text-reunion-forest md:text-xl">
           {member.name}
         </h3>
-        <p className="text-[10px] text-reunion-gold font-bold uppercase tracking-widest">
-          {className}
+        <p className="line-clamp-3 text-sm leading-relaxed text-slate-500">
+          {bio}
         </p>
       </div>
     </Link>
