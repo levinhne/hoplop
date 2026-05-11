@@ -44,7 +44,7 @@
 ### Collection: `teachers`
 | Field | Type | Note |
 | :--- | :--- | :--- |
-| `name` | Text (Required) | Tên thầy cô |
+| `name` | Text (Required) | Tên Thầy Cô |
 | `subject` | Text | Môn giảng dạy |
 | `period` | Text | Giai đoạn giảng dạy |
 | `avatar` | File (Image) | Ảnh chân dung |
@@ -102,7 +102,7 @@ web/
 │   │   ├── __root.tsx     # Root Layout
 │   │   ├── index.tsx      # Landing Page
 │   │   ├── members/       # Danh sách & Chi tiết bạn bè
-│   │   ├── teachers/      # Tri ân thầy cô
+│   │   ├── teachers/      # Tri ân Thầy Cô
 │   │   ├── feelings/      # Lời nhắn gửi
 │   │   └── gallery.tsx    # Album ảnh
 │   ├── components/
@@ -138,15 +138,15 @@ web/
 - [x] Thực hiện fetch dữ liệu Members & Teachers qua TanStack Query.
 - [x] Xây dựng các trang danh sách bằng shadcn Card.
 - [x] Xây dựng Modal chi tiết (Dialog) hiển thị bio/tribute.
-- **Kết quả**: Xem được danh sách bạn bè, thầy cô với dữ liệu thật từ DB.
+- **Kết quả**: Xem được danh sách bạn bè, Thầy Cô với dữ liệu thật từ DB.
 - **Trạng thái app**: Danh sách hiển thị động, có thể bấm xem chi tiết từng người.
 
 ### Phase 4: Lời nhắn gửi (Targeted Feelings)
 - [x] Xây dựng Form gửi cảm nhận (Zod + React Hook Form).
-- [x] Tích hợp chọn đối tượng gửi (Cả lớp/Thầy cô/Bạn bè).
+- [x] Tích hợp chọn đối tượng gửi (Cả lớp/Thầy Cô/Bạn bè).
 - [x] Hiển thị danh sách lời nhắn đã được duyệt, sort mới nhất trước bằng `created`.
 - [x] Upload ảnh đính kèm (ẩn tạm trên UI, giữ schema backend để bật lại sau).
-- **Kết quả**: Người dùng có thể gửi lời nhắn "địa chỉ hóa" tới cả lớp, thầy cô hoặc bạn bè.
+- **Kết quả**: Người dùng có thể gửi lời nhắn "địa chỉ hóa" tới cả lớp, Thầy Cô hoặc bạn bè.
 - **Trạng thái app**: Form gửi hoạt động, dữ liệu được đẩy về DB chờ duyệt.
 
 ### Phase 5: Gallery & Final Refinement
@@ -184,7 +184,7 @@ web/
 
 ### Refactor (Ưu tiên trung bình)
 - [x] **Tách `normalizeText` và `normalizeSearch` ra `lib/utils.ts`**: Hai hàm này đang bị duplicate ở `members.tsx`, `teachers.tsx`, `feelings.tsx`, `index.tsx`. Di chuyển vào utils và import lại để nhất quán.
-- [x] **Thêm ô tìm kiếm tên cho trang Thầy cô** (`routes/teachers.tsx`): Trang Members đã có search, Teachers thì chưa — thêm vào để đồng nhất UX.
+- [x] **Thêm ô tìm kiếm tên cho trang Thầy Cô** (`routes/teachers.tsx`): Trang Members đã có search, Teachers thì chưa — thêm vào để đồng nhất UX.
 - [x] **Tách `class_name` thành collection `classes` riêng**:
   - Backend: tạo migration thêm collection `classes`.
   - Backend: thêm `members.class_ref` relation tới `classes`; bỏ `members.class_name` sau khi backfill.
