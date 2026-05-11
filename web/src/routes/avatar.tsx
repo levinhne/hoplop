@@ -10,8 +10,8 @@ import { seo } from '@/lib/seo'
 const OUTPUT_SIZE = 1080
 const MAX_ZOOM = 3
 const PHOTO_CENTER_X = 540
-const PHOTO_CENTER_Y = 500
-const PHOTO_RADIUS = 346
+const PHOTO_CENTER_Y = 559
+const PHOTO_RADIUS = 391
 
 type LoadedImage = {
   element: HTMLImageElement
@@ -76,13 +76,12 @@ function AvatarComponent() {
     context.fillStyle = '#FDFCF8'
     context.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE)
 
-    context.save()
-    context.beginPath()
-    context.arc(PHOTO_CENTER_X, PHOTO_CENTER_Y, PHOTO_RADIUS, 0, Math.PI * 2)
-    context.clip()
-
     if (userImage) {
       const safePosition = clampImagePosition(position, scaledSize.width, scaledSize.height)
+      context.save()
+      context.beginPath()
+      context.arc(PHOTO_CENTER_X, PHOTO_CENTER_Y, PHOTO_RADIUS, 0, Math.PI * 2)
+      context.clip()
       context.drawImage(
         userImage.element,
         (OUTPUT_SIZE - scaledSize.width) / 2 + safePosition.x,
@@ -90,12 +89,16 @@ function AvatarComponent() {
         scaledSize.width,
         scaledSize.height,
       )
+      context.restore()
     } else {
+      context.save()
+      context.beginPath()
+      context.arc(PHOTO_CENTER_X, PHOTO_CENTER_Y, PHOTO_RADIUS, 0, Math.PI * 2)
+      context.clip()
       context.fillStyle = '#E8E0D2'
       context.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE)
+      context.restore()
     }
-
-    context.restore()
 
     if (frameImage) {
       context.drawImage(frameImage, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE)
