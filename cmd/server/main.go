@@ -25,6 +25,7 @@ import (
 )
 
 func main() {
+	// app
 	app := pocketbase.New()
 
 	// migration command
