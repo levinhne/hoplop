@@ -72,6 +72,10 @@ function AvatarComponent() {
 
     if (!canvas || !context) return
 
+    // Cấu hình chất lượng cao cho việc xử lý ảnh
+    context.imageSmoothingEnabled = true
+    context.imageSmoothingQuality = 'high'
+
     context.clearRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE)
     context.fillStyle = '#FDFCF8'
     context.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE)
@@ -208,16 +212,27 @@ function AvatarComponent() {
 
   const handleZoomChange = useCallback(
     (nextZoom: number) => {
-      setZoom(nextZoom)
+      const clampedZoom = Math.min(Math.max(nextZoom, 1), MAX_ZOOM)
+      setZoom(clampedZoom)
 
       if (!userImage) return
 
-      const nextScale = minScale * nextZoom
+      const nextScale = minScale * clampedZoom
       setPosition((current) =>
         clampImagePosition(current, userImage.width * nextScale, userImage.height * nextScale),
       )
     },
     [minScale, userImage],
+  )
+
+  const handleWheel = useCallback(
+    (event: React.WheelEvent<HTMLCanvasElement>) => {
+      if (!userImage) return
+      event.preventDefault()
+      const delta = -event.deltaY / 500
+      handleZoomChange(zoom + delta)
+    },
+    [handleZoomChange, userImage, zoom],
   )
 
   const exportBlob = useCallback(async () => {
@@ -228,7 +243,8 @@ function AvatarComponent() {
     if (!canvas) return null
 
     return new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), 'image/png')
+      // Tối ưu: Xuất định dạng JPEG chất lượng cao để dung lượng nhẹ hơn đáng kể so với PNG
+      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.92)
     })
   }, [drawCanvas])
 
@@ -266,7 +282,7 @@ function AvatarComponent() {
       shareWindow?.document.write('<p style="font-family: sans-serif; padding: 24px;">Đang chuẩn bị ảnh chia sẻ...</p>')
 
       const formData = new FormData()
-      formData.append('image', blob, 'giao-lo-khoi-9-avatar.png')
+      formData.append('image', blob, 'giao-lo-khoi-9-avatar.jpg')
       formData.append('access_code', getStoredReunionAccessCode())
 
       const response = await fetch(`${pocketBaseUrl}/api/avatar-shares`, {
@@ -435,6 +451,7 @@ function AvatarComponent() {
                     onPointerMove={handlePointerMove}
                     onPointerUp={endDrag}
                     onPointerCancel={endDrag}
+                    onWheel={handleWheel}
                     className={`aspect-square w-full touch-none rounded-md bg-reunion-paper ${
                       userImage ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-default'
                     }`}
@@ -442,7 +459,7 @@ function AvatarComponent() {
                   />
                 </div>
                 <p className="mx-auto mt-3 max-w-[680px] px-2 text-center text-xs font-medium leading-relaxed text-slate-500 md:text-sm">
-                  {userImage ? 'Kéo ảnh trong khung để canh mặt, dùng thanh zoom nếu cần phóng gần hơn.' : 'Tải ảnh lên để bắt đầu tạo avatar.'}
+                  {userImage ? 'Kéo ảnh trong khung để căn mặt, dùng thanh zoom hoặc cuộn chuột để phóng gần hơn.' : 'Tải ảnh lên để bắt đầu tạo avatar.'}
                 </p>
               </div>
             </div>
@@ -472,7 +489,7 @@ function downloadBlob(blob: Blob) {
   const link = document.createElement('a')
 
   link.href = url
-  link.download = 'giao-lo-khoi-9-avatar.png'
+  link.download = 'giao-lo-khoi-9-avatar.jpg'
   link.click()
   URL.revokeObjectURL(url)
 }
