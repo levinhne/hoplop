@@ -203,6 +203,10 @@ func renderAvatarSharePage(e *core.RequestEvent) error {
 	}
 
 	imageURL := avatarShareImageURL(e, record)
+	imageType := "image/png"
+	if strings.HasSuffix(strings.ToLower(imageURL), ".jpg") || strings.HasSuffix(strings.ToLower(imageURL), ".jpeg") {
+		imageType = "image/jpeg"
+	}
 	shareURL := absoluteURL(e, "/avatar/share/"+record.Id)
 	title := "Avatar Giao Lộ Khối 9"
 	description := "Một tấm ảnh, một lời hẹn gặp lại cùng Giao Lộ Khối 9."
@@ -221,7 +225,7 @@ func renderAvatarSharePage(e *core.RequestEvent) error {
   <meta property="og:image" content="%s">
   <meta property="og:image:width" content="1080">
   <meta property="og:image:height" content="1080">
-  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:type" content="%s">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="%s">
   <meta name="twitter:description" content="%s">
@@ -244,6 +248,7 @@ func renderAvatarSharePage(e *core.RequestEvent) error {
 		html.EscapeString(description),
 		html.EscapeString(shareURL),
 		html.EscapeString(imageURL),
+		html.EscapeString(imageType),
 		html.EscapeString(title),
 		html.EscapeString(description),
 		html.EscapeString(imageURL),

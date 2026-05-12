@@ -267,49 +267,67 @@ function AvatarComponent() {
 
   const shareAvatar = useCallback(async () => {
     setIsExporting(true)
-    const shareWindow = window.open('about:blank', '_blank')
+    
+    // Kiểm tra khả năng chia sẻ file của trình duyệt
+    const canShare = typeof navigator !== 'undefined' && !!navigator.canShare
+    let shareWindow: Window | null = null
+    
+    // Nếu không hỗ trợ chia sẻ hệ thống, chuẩn bị mở cửa sổ Facebook sớm
+    if (!canShare) {
+      shareWindow = window.open('about:blank', '_blank')
+    }
 
     try {
       const blob = await exportBlob()
-
       if (!blob) {
         shareWindow?.close()
         setError('Không tạo được ảnh chia sẻ. Vui lòng thử lại.')
         return
       }
 
-      shareWindow?.document.write('<p style="font-family: sans-serif; padding: 24px;">Đang chuẩn bị ảnh chia sẻ...</p>')
-
-      const formData = new FormData()
-      formData.append('image', blob, 'giao-lo-khoi-9-avatar.png')
-      formData.append('access_code', getStoredReunionAccessCode())
-
-      const response = await fetch(`${pocketBaseUrl.replace(/\/$/, '')}/api/avatar-shares`, {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        throw new Error('Avatar upload failed')
-      }
-
-      const data = (await response.json()) as { facebookShareUrl?: string }
-
-      if (!data.facebookShareUrl) {
-        throw new Error('Missing Facebook share URL')
-      }
-
-      if (shareWindow) {
-        shareWindow.location.href = data.facebookShareUrl
-        shareWindow.opener = null
+      // Tạo file từ blob để chia sẻ trực tiếp
+      const file = new File([blob], 'giao-lo-khoi-9-avatar.png', { type: 'image/png' })
+      
+      // Thử chia sẻ file trực tiếp (tối ưu cho Mobile/In-app browser)
+      if (canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Avatar Giao Lộ Khối 9',
+          text: 'Hẹn gặp bạn tại ngày hội ngộ Giao Lộ Khối 9!',
+        })
       } else {
-        window.location.assign(data.facebookShareUrl)
+        // Nếu không chia sẻ được file, thực hiện upload và fallback sang link Facebook
+        if (shareWindow) {
+          shareWindow.document.write('<p style="font-family: sans-serif; padding: 24px;">Đang chuẩn bị link chia sẻ...</p>')
+        }
+
+        const formData = new FormData()
+        formData.append('image', blob, 'giao-lo-khoi-9-avatar.png')
+        formData.append('access_code', getStoredReunionAccessCode())
+
+        const response = await fetch(`${pocketBaseUrl.replace(/\/$/, '')}/api/avatar-shares`, {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) throw new Error('Upload failed')
+
+        const data = (await response.json()) as { facebookShareUrl?: string }
+        const targetUrl = data.facebookShareUrl || ''
+
+        if (shareWindow) {
+          shareWindow.location.href = targetUrl
+          shareWindow.opener = null
+        } else {
+          window.location.assign(targetUrl)
+        }
       }
       setError('')
     } catch (shareError) {
       shareWindow?.close()
-      if (shareError instanceof DOMException && shareError.name === 'AbortError') return
-      setError('Không upload được ảnh chia sẻ. Vui lòng thử lại hoặc dùng nút Tải ảnh.')
+      // Bỏ qua lỗi nếu người dùng nhấn "Cancel" trong bảng chia sẻ
+      if (shareError instanceof Error && shareError.name === 'AbortError') return
+      setError('Không thực hiện được chia sẻ. Bạn vui lòng dùng nút "Tải ảnh" nhé.')
     } finally {
       setIsExporting(false)
     }
@@ -321,12 +339,12 @@ function AvatarComponent() {
       <section className="page-hero">
         <div className="section-container grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-end">
           <div className="max-w-3xl space-y-3 lg:col-span-8">
-            <span className="eyebrow">Avatar Facebook</span>
+            <span className="eyebrow">Ảnh đại diện</span>
             <h1 className="font-serif text-4xl font-bold leading-tight text-reunion-ink md:text-5xl">
               Tạo ảnh đại diện cho ngày gặp lại.
             </h1>
             <p className="max-w-2xl font-serif text-base italic leading-relaxed text-slate-500 md:text-lg">
-              Chọn một tấm ảnh, canh gương mặt vào khung kỷ niệm rồi tải về để đổi avatar hoặc đăng lên Facebook.
+              Chọn một tấm ảnh, canh gương mặt vào khung kỷ niệm rồi tải về để đổi avatar hoặc chia sẻ với bạn bè.
             </p>
           </div>
 
@@ -413,7 +431,7 @@ function AvatarComponent() {
                   onClick={shareAvatar}
                 >
                   {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
-                  Chia sẻ Facebook
+                  Chia sẻ ảnh
                 </Button>
               </div>
 
@@ -488,7 +506,8 @@ function downloadBlob(blob: Blob) {
   const link = document.createElement('a')
 
   link.href = url
-  link.download = 'giao-lo-khoi-9-avatar.jpg'
+  link.download = 'giao-lo-khoi-9-avatar.png'
   link.click()
   URL.revokeObjectURL(url)
 }
+
