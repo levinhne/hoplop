@@ -759,9 +759,10 @@ function FeelingCard({ feeling }: { feeling: Feeling }) {
 
               <div className="relative">
                 <MessageSquareQuote className="absolute -left-4 -top-4 h-8 w-8 text-reunion-gold/10" />
-                <p className="pl-2 font-serif text-lg italic leading-relaxed text-slate-600">
-                  "{content}"
-                </p>
+                <div
+                  className="pl-2 font-serif text-lg italic leading-relaxed text-slate-600"
+                  dangerouslySetInnerHTML={{ __html: content }}
+                />
               </div>
             </div>
           </DialogContent>
