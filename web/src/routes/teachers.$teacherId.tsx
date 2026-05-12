@@ -91,9 +91,10 @@ function TeacherDetailPage() {
 
               <div className="relative max-w-3xl">
                 <Heart className="absolute -left-4 -top-4 h-10 w-10 text-reunion-gold/10" />
-                <p className="pl-3 font-serif text-xl italic leading-relaxed text-slate-600 md:text-3xl">
-                  "{tribute}"
-                </p>
+                <div
+                  className="pl-3 font-serif text-xl italic leading-relaxed text-slate-600 md:text-3xl"
+                  dangerouslySetInnerHTML={{ __html: tribute }}
+                />
               </div>
             </div>
           </div>
