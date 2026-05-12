@@ -722,9 +722,10 @@ function FeelingCard({ feeling }: { feeling: Feeling }) {
         <MessageSquareQuote className="h-5 w-5 text-reunion-gold/60" />
       </div>
 
-      <p className="line-clamp-5 font-serif italic leading-relaxed text-slate-600">
-        "{content}"
-      </p>
+      <div
+        className="line-clamp-5 font-serif italic leading-relaxed text-slate-600"
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
 
       {attachmentUrl && (
         <div className="mt-5 overflow-hidden rounded-lg bg-slate-100">
