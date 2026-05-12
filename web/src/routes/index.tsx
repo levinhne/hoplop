@@ -209,7 +209,7 @@ function HomeComponent() {
           <SectionHeader
             eyebrow="Danh sách"
             title="Bạn bè trong lớp"
-            description="Một vài gương mặt trong hành trình, lấy trực tiếp từ dữ liệu bạn bè."
+            description="Những gương mặt thân quen của một thời thanh xuân dưới mái trường."
             to="/members"
             action="Xem tất cả"
           />

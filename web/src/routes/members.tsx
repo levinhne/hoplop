@@ -93,7 +93,7 @@ function MembersPage() {
       <section className="page-hero">
         <div className="section-container grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-end">
           <div className="max-w-3xl space-y-3 lg:col-span-8">
-            <span className="eyebrow">Tập thể 9A</span>
+            <span className="eyebrow">Tập thể Khối 9</span>
             <h1 className="font-serif text-4xl font-bold leading-tight text-reunion-ink md:text-5xl">
               Chúng mình của hiện tại
             </h1>
