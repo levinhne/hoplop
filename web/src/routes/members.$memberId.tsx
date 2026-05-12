@@ -209,9 +209,10 @@ function RelatedMemberCard({ member }: { member: Member }) {
         <h3 className="break-words font-serif text-lg font-bold leading-tight text-reunion-ink transition-colors group-hover:text-reunion-forest md:text-xl">
           {member.name}
         </h3>
-        <p className="line-clamp-3 text-sm leading-relaxed text-slate-500">
-          {bio}
-        </p>
+        <div
+          className="line-clamp-3 text-sm leading-relaxed text-slate-500"
+          dangerouslySetInnerHTML={{ __html: bio }}
+        />
       </div>
     </Link>
   );
