@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getFileUrl } from '@/lib/pocketbase'
-import { useGallery } from '@/hooks/useGallery'
+import { useGalleryList } from '@/hooks/useGallery'
 import { cn } from '@/lib/utils'
 import { seo } from '@/lib/seo'
 import { ImageIcon, Images } from 'lucide-react'
@@ -41,7 +41,7 @@ export const Route = createFileRoute('/gallery')({
 })
 
 function GalleryPage() {
-  const { data: gallery, isLoading, error } = useGallery()
+  const { data: gallery, isLoading, error } = useGalleryList()
   const [selectedCategory, setSelectedCategory] = useState<GalleryFilter>('all')
 
   const visibleGallery = useMemo(() => {

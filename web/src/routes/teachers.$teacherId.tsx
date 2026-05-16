@@ -1,13 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { BookOpen, GraduationCap, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getFileUrl, pb } from "@/lib/pocketbase";
+import { useTeacherDetail } from "@/hooks/useTeachers";
+import { getFileUrl } from "@/lib/pocketbase";
 import { normalizeText } from "@/lib/utils";
 import { seo } from "@/lib/seo";
 import { TargetFeelingsBox } from "@/components/target-feelings-box";
-import type { Teacher } from "@/types";
 
 export const Route = createFileRoute("/teachers/$teacherId")({
   head: () => ({
@@ -26,12 +25,7 @@ function TeacherDetailPage() {
     data: teacher,
     isLoading,
     error,
-  } = useQuery({
-    queryKey: ["teachers", teacherId],
-    queryFn: async () => {
-      return pb.collection("teachers").getOne<Teacher>(teacherId);
-    },
-  });
+  } = useTeacherDetail(teacherId);
 
   if (isLoading) {
     return <DetailSkeleton />;

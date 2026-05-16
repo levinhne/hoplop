@@ -1,12 +1,10 @@
-import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, MapPin, MessageCircle, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMembers } from "@/hooks/useMembers";
+import { useMemberDetail, useRelatedMembers } from "@/hooks/useMembers";
 import { getMemberClassName } from "@/lib/members";
-import { getFileUrl, pb } from "@/lib/pocketbase";
+import { getFileUrl } from "@/lib/pocketbase";
 import { normalizeText } from "@/lib/utils";
 import { seo } from "@/lib/seo";
 import { TargetFeelingsBox } from "@/components/target-feelings-box";
@@ -24,35 +22,13 @@ export const Route = createFileRoute("/members/$memberId")({
 
 function MemberDetailPage() {
   const { memberId } = Route.useParams();
-  const { data: members, isLoading: isLoadingMembers } = useMembers();
-
   const {
     data: member,
     isLoading,
     error,
-  } = useQuery({
-    queryKey: ["members", memberId],
-    queryFn: async () => {
-      return pb.collection("members").getOne<Member>(memberId, {
-        expand: "class_ref",
-      });
-    },
-  });
-
-  const relatedMembers = useMemo(() => {
-    if (!member || !members) return [];
-
-    const currentClassName = getMemberClassName(member);
-    return members
-      .filter(
-        (item) =>
-          item.id !== member.id && getMemberClassName(item) === currentClassName
-      )
-      .sort(
-        (a, b) => stableScore(member.id, a.id) - stableScore(member.id, b.id)
-      )
-      .slice(0, 4);
-  }, [member, members]);
+  } = useMemberDetail(memberId);
+  const { data: relatedMembers, isLoading: isLoadingMembers } =
+    useRelatedMembers(memberId, member?.class_ref);
 
   if (isLoading) {
     return <DetailSkeleton />;
@@ -154,7 +130,7 @@ function MemberDetailPage() {
 
           {isLoadingMembers ? (
             <RelatedSkeleton />
-          ) : relatedMembers.length > 0 ? (
+          ) : relatedMembers && relatedMembers.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {relatedMembers.map((item) => (
                 <RelatedMemberCard key={item.id} member={item} />
@@ -236,17 +212,6 @@ function RelatedSkeleton() {
       ))}
     </div>
   );
-}
-
-function stableScore(seed: string, value: string) {
-  let hash = 0;
-  const input = `${seed}:${value}`;
-
-  for (let index = 0; index < input.length; index += 1) {
-    hash = (hash * 31 + input.charCodeAt(index)) >>> 0;
-  }
-
-  return hash;
 }
 
 function DetailSkeleton() {

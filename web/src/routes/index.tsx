@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getMemberClassName } from "@/lib/members";
 import { getFileUrl } from "@/lib/pocketbase";
 import { normalizeText } from "@/lib/utils";
-import { useFeelings } from "@/hooks/useFeelings";
-import { useGallery } from "@/hooks/useGallery";
-import { useMembers } from "@/hooks/useMembers";
+import { useFeelingsPreview } from "@/hooks/useFeelings";
+import { useGalleryPreview } from "@/hooks/useGallery";
+import { useMembersPreview } from "@/hooks/useMembers";
 import { useStats } from "@/hooks/useStats";
-import { useTeachers } from "@/hooks/useTeachers";
+import { useTeachersPreview } from "@/hooks/useTeachers";
 import { seo } from "@/lib/seo";
 import {
   ArrowRight,
@@ -59,21 +59,19 @@ export const Route = createFileRoute("/")({
 
 function HomeComponent() {
   const { data: stats, isLoading: isLoadingStats } = useStats();
-  const { data: members, isLoading: isLoadingMembers } = useMembers();
-  const { data: teachers, isLoading: isLoadingTeachers } = useTeachers();
-  const { data: feelings, isLoading: isLoadingFeelings } = useFeelings();
-  const { data: gallery, isLoading: isLoadingGallery } = useGallery();
-
-  const previewMembers = useMemo(
-    () => getRandomItems(members ?? [], 4),
-    [members]
-  );
-  const previewTeachers = teachers?.slice(0, 4) ?? [];
-  const latestFeelings = feelings?.slice(0, 12) ?? [];
-  const sliderImages = gallery?.slice(0, 6) ?? [];
+  const { data: previewMembers, isLoading: isLoadingMembers } =
+    useMembersPreview(6);
+  const { data: previewTeachers, isLoading: isLoadingTeachers } =
+    useTeachersPreview(4);
+  const { data: latestFeelings, isLoading: isLoadingFeelings } =
+    useFeelingsPreview(12);
+  const { data: sliderImages, isLoading: isLoadingGallery } =
+    useGalleryPreview(6);
   const typedHeroLine = useTypingLoop(heroTypingLines);
-  const showHeroActions = useShowAfterScrollRatio(1 / 5);
-  const activeSlideIndex = useHeroSlideIndex(sliderImages.length);
+  const isMobileHero = useMediaQuery("(max-width: 767px)");
+  const showHeroActionsAfterScroll = useShowAfterScrollRatio(1 / 5);
+  const showHeroActions = isMobileHero || showHeroActionsAfterScroll;
+  const activeSlideIndex = useHeroSlideIndex(sliderImages?.length ?? 0);
 
   return (
     <div className="flex flex-col">
@@ -81,7 +79,7 @@ function HomeComponent() {
         <div className="absolute inset-0 bg-reunion-forest">
           {isLoadingGallery ? (
             <Skeleton className="h-full w-full rounded-none bg-reunion-forest/80" />
-          ) : sliderImages.length > 0 ? (
+          ) : sliderImages && sliderImages.length > 0 ? (
             sliderImages.map((item, index) => {
               const isActive = index === activeSlideIndex;
 
@@ -118,7 +116,7 @@ function HomeComponent() {
               <div className="mb-4 flex items-center gap-3">
                 <span className="h-px w-6 md:w-8 bg-reunion-gold"></span>
                 <span className="eyebrow mb-0 text-[10px] text-reunion-gold md:text-[11px]">
-                  Hành trình hồi ức
+                  Hành trình kí ức
                 </span>
               </div>
               <h1 className="heading-hero max-w-3xl text-4xl text-white drop-shadow-lg md:text-6xl lg:text-7xl">
@@ -208,7 +206,7 @@ function HomeComponent() {
         <div className="section-container">
           <SectionHeader
             eyebrow="Danh sách"
-            title="Bạn bè trong lớp"
+            title="Bạn bè trong khối"
             description="Những gương mặt thân quen của một thời thanh xuân dưới mái trường."
             to="/members"
             action="Xem tất cả"
@@ -218,7 +216,7 @@ function HomeComponent() {
             <PreviewSkeleton />
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {previewMembers.map((member) => (
+              {(previewMembers ?? []).map((member) => (
                 <MemberPreviewCard key={member.id} member={member} />
               ))}
             </div>
@@ -240,7 +238,7 @@ function HomeComponent() {
             <PreviewSkeleton />
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {previewTeachers.map((teacher) => (
+              {(previewTeachers ?? []).map((teacher) => (
                 <TeacherPreviewCard key={teacher.id} teacher={teacher} />
               ))}
             </div>
@@ -261,7 +259,7 @@ function HomeComponent() {
 
         {isLoadingFeelings ? (
           <FeelingMarqueeSkeleton />
-        ) : latestFeelings.length > 0 ? (
+        ) : latestFeelings && latestFeelings.length > 0 ? (
           <div className="space-y-4 md:space-y-5">
             <FeelingMarquee feelings={latestFeelings} direction="left" />
             <FeelingMarquee
@@ -426,6 +424,22 @@ function useShowAfterScrollRatio(ratio: number) {
   return isVisible;
 }
 
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(query);
+    const updateMatches = () => setMatches(mediaQuery.matches);
+
+    updateMatches();
+    mediaQuery.addEventListener("change", updateMatches);
+
+    return () => mediaQuery.removeEventListener("change", updateMatches);
+  }, [query]);
+
+  return matches;
+}
+
 function useHeroSlideIndex(slideCount: number) {
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -560,7 +574,7 @@ function SectionHeader({
 function PreviewSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      {[1, 2, 3, 4].map((item) => (
+      {[1, 2, 3, 4, 5, 6].map((item) => (
         <div
           key={item}
           className="flex overflow-hidden rounded-lg border border-slate-200/70 bg-white"
@@ -607,7 +621,8 @@ function MemberPreviewCard({ member }: { member: Member }) {
 
   return (
     <Link
-      to="/members"
+      to="/members/$memberId"
+      params={{ memberId: member.id }}
       className="journal-card group flex cursor-pointer border-2 border-slate-50 text-left"
     >
       <div className="relative aspect-[4/5] w-1/2 shrink-0 overflow-hidden bg-slate-100">
@@ -683,16 +698,6 @@ function TeacherPreviewCard({ teacher }: { teacher: Teacher }) {
       </div>
     </Link>
   );
-}
-
-function getRandomItems<T>(items: T[], limit: number) {
-  if (items.length <= limit) return items;
-
-  return [...items]
-    .map((item) => ({ item, rank: Math.random() }))
-    .sort((a, b) => a.rank - b.rank)
-    .slice(0, limit)
-    .map(({ item }) => item);
 }
 
 function FeelingMarquee({

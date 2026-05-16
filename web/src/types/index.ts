@@ -45,6 +45,7 @@ export interface GalleryItem {
   image: string;
   caption: string;
   category: 'school' | 'reunion' | 'old_days';
+  show_in_hero: boolean;
   is_public: boolean;
   created: string;
   updated: string;

@@ -8,7 +8,7 @@ import {
 import { BookOpen, GraduationCap, Heart } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTeachers } from "@/hooks/useTeachers";
+import { useTeachersList } from "@/hooks/useTeachers";
 import { getFileUrl } from "@/lib/pocketbase";
 import { normalizeText } from "@/lib/utils";
 import { seo } from "@/lib/seo";
@@ -38,10 +38,19 @@ export const Route = createFileRoute("/teachers")({
 
 function TeachersPage() {
   const matchRoute = useMatchRoute();
-  const { data: teachers, isLoading, error } = useTeachers();
+  const isDetailRoute = Boolean(matchRoute({ to: "/teachers/$teacherId" }));
+
+  if (isDetailRoute) {
+    return <Outlet />;
+  }
+
+  return <TeachersListPage />;
+}
+
+function TeachersListPage() {
+  const { data: teachers, isLoading, error } = useTeachersList();
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [isQuoteVisible, setIsQuoteVisible] = useState(true);
-  const isDetailRoute = Boolean(matchRoute({ to: "/teachers/$teacherId" }));
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -54,10 +63,6 @@ function TeachersPage() {
 
     return () => window.clearInterval(interval);
   }, []);
-
-  if (isDetailRoute) {
-    return <Outlet />;
-  }
 
   if (error) {
     return (

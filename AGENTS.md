@@ -82,7 +82,7 @@ The frontend PocketBase URL is configured in `web/src/lib/pocketbase.ts` and can
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **hoplop** (592 symbols, 888 relationships, 11 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **khoa91yendong.io.vn** (886 symbols, 1578 relationships, 44 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -105,10 +105,10 @@ This project is indexed by GitNexus as **hoplop** (592 symbols, 888 relationship
 
 | Resource | Use for |
 |----------|---------|
-| `gitnexus://repo/hoplop/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/hoplop/clusters` | All functional areas |
-| `gitnexus://repo/hoplop/processes` | All execution flows |
-| `gitnexus://repo/hoplop/process/{name}` | Step-by-step execution trace |
+| `gitnexus://repo/khoa91yendong.io.vn/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/khoa91yendong.io.vn/clusters` | All functional areas |
+| `gitnexus://repo/khoa91yendong.io.vn/processes` | All execution flows |
+| `gitnexus://repo/khoa91yendong.io.vn/process/{name}` | Step-by-step execution trace |
 
 ## CLI
 

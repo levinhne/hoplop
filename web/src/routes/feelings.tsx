@@ -1,7 +1,7 @@
-import { useCreateFeeling, useFeelings } from "@/hooks/useFeelings";
+import { useCreateFeeling, useFeelingsList } from "@/hooks/useFeelings";
 import { useClasses } from "@/hooks/useClasses";
-import { useMembers } from "@/hooks/useMembers";
-import { useTeachers } from "@/hooks/useTeachers";
+import { useMembersList } from "@/hooks/useMembers";
+import { useTeachersList } from "@/hooks/useTeachers";
 import { getMemberClassName } from "@/lib/members";
 import { cn, normalizeText } from "@/lib/utils";
 import {
@@ -114,10 +114,10 @@ function FeelingsPage() {
     data: feelings,
     isLoading: isLoadingFeelings,
     error: feelingsError,
-  } = useFeelings();
+  } = useFeelingsList();
   const { data: classes, isLoading: isLoadingClasses } = useClasses();
-  const { data: members, isLoading: isLoadingMembers } = useMembers();
-  const { data: teachers, isLoading: isLoadingTeachers } = useTeachers();
+  const { data: members, isLoading: isLoadingMembers } = useMembersList();
+  const { data: teachers, isLoading: isLoadingTeachers } = useTeachersList();
   const createFeeling = useCreateFeeling();
   const { toast } = useToast();
   const [feelingFilter, setFeelingFilter] = useState<FeelingFilter>("all");
@@ -744,11 +744,11 @@ function FeelingCard({ feeling }: { feeling: Feeling }) {
               Đọc đầy đủ
             </button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl overflow-hidden rounded-xl border-none p-0 shadow-2xl">
-            <div className="space-y-6 bg-white p-8 md:p-10">
-              <div className="space-y-3">
+          <DialogContent className="max-h-[92svh] w-[calc(100vw-1rem)] max-w-2xl overflow-hidden rounded-xl border-none p-0 shadow-2xl sm:w-full">
+            <div className="max-h-[92svh] overflow-y-auto bg-white p-5 pb-6 pt-6 sm:p-8 md:p-10">
+              <div className="space-y-3 pr-8 sm:pr-0">
                 <span className="eyebrow">{target}</span>
-                <DialogTitle className="font-serif text-3xl font-bold text-reunion-ink md:text-4xl">
+                <DialogTitle className="break-words font-serif text-2xl font-bold leading-tight text-reunion-ink sm:text-3xl md:text-4xl">
                   {feeling.author_name}
                 </DialogTitle>
                 <DialogDescription className="sr-only">
@@ -757,13 +757,23 @@ function FeelingCard({ feeling }: { feeling: Feeling }) {
                 <div className="h-1 w-12 bg-reunion-gold"></div>
               </div>
 
-              <div className="relative">
-                <MessageSquareQuote className="absolute -left-4 -top-4 h-8 w-8 text-reunion-gold/10" />
+              <div className="relative mt-6">
+                <MessageSquareQuote className="absolute -left-2 -top-3 h-7 w-7 text-reunion-gold/10 sm:-left-4 sm:-top-4 sm:h-8 sm:w-8" />
                 <div
-                  className="pl-2 font-serif text-lg italic leading-relaxed text-slate-600"
+                  className="pl-1 font-serif text-base italic leading-relaxed text-slate-600 [overflow-wrap:anywhere] sm:pl-2 sm:text-lg"
                   dangerouslySetInnerHTML={{ __html: content }}
                 />
               </div>
+
+              {attachmentUrl && (
+                <div className="mt-6 overflow-hidden rounded-lg bg-slate-100">
+                  <img
+                    src={attachmentUrl}
+                    alt={`Ảnh đính kèm của ${feeling.author_name}`}
+                    className="max-h-[45svh] w-full object-contain"
+                  />
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>

@@ -3,7 +3,7 @@ import { MessageSquareQuote, PenLine } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useFeelings } from "@/hooks/useFeelings";
+import { useTargetFeelings } from "@/hooks/useFeelings";
 import { normalizeText } from "@/lib/utils";
 import type { Feeling } from "@/types";
 
@@ -20,15 +20,13 @@ export function TargetFeelingsBox({
   title,
   emptyMessage,
 }: TargetFeelingsBoxProps) {
-  const { data: feelings, isLoading, error } = useFeelings();
-  const targetFeelings = (feelings ?? []).filter((feeling) => {
-    if (targetType === "member")
-      return (
-        feeling.target_type === "member" && feeling.member_target === targetId
-      );
-    return (
-      feeling.target_type === "teacher" && feeling.teacher_target === targetId
-    );
+  const {
+    data: targetFeelings,
+    isLoading,
+    error,
+  } = useTargetFeelings({
+    targetId,
+    targetType,
   });
 
   return (
@@ -77,7 +75,7 @@ export function TargetFeelingsBox({
                 </div>
               ))}
             </div>
-          ) : targetFeelings.length > 0 ? (
+          ) : targetFeelings && targetFeelings.length > 0 ? (
             <div className="space-y-4">
               {targetFeelings.map((feeling) => (
                 <TargetFeelingItem key={feeling.id} feeling={feeling} />

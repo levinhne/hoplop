@@ -11,18 +11,72 @@ export interface CreateFeelingInput {
   target_id?: string;
 }
 
-export const useFeelings = () => {
+export const feelingsQueryKeys = {
+  all: ['feelings'] as const,
+  list: () => [...feelingsQueryKeys.all, 'list'] as const,
+  preview: (limit: number) => [...feelingsQueryKeys.all, 'preview', limit] as const,
+  target: (targetType: Exclude<FeelingTargetType, 'general'>, targetId: string) =>
+    [...feelingsQueryKeys.all, 'target', targetType, targetId] as const,
+};
+
+const approvedPublicFeelingsFilter = 'is_public = true && is_approved = true';
+
+const targetFieldByType: Record<Exclude<FeelingTargetType, 'general'>, string> = {
+  class: 'class_target',
+  teacher: 'teacher_target',
+  member: 'member_target',
+};
+
+export const useFeelingsList = () => {
   return useQuery({
-    queryKey: ['feelings'],
+    queryKey: feelingsQueryKeys.list(),
     queryFn: async () => {
       const records = await pb.collection('feelings').getFullList<Feeling>({
-        filter: 'is_public = true && is_approved = true',
+        filter: approvedPublicFeelingsFilter,
         expand: 'class_target,teacher_target,member_target',
         sort: '-created',
       });
 
       return records;
     },
+  });
+};
+
+export const useFeelingsPreview = (limit = 12) => {
+  return useQuery({
+    queryKey: feelingsQueryKeys.preview(limit),
+    queryFn: async () => {
+      const result = await pb.collection('feelings').getList<Feeling>(1, limit, {
+        filter: approvedPublicFeelingsFilter,
+        expand: 'class_target,teacher_target,member_target',
+        sort: '@random',
+      });
+
+      return result.items;
+    },
+  });
+};
+
+export const useTargetFeelings = ({
+  targetId,
+  targetType,
+}: {
+  targetId: string;
+  targetType: Exclude<FeelingTargetType, 'general'>;
+}) => {
+  const targetField = targetFieldByType[targetType];
+
+  return useQuery({
+    queryKey: feelingsQueryKeys.target(targetType, targetId),
+    queryFn: async () => {
+      const records = await pb.collection('feelings').getFullList<Feeling>({
+        filter: `${approvedPublicFeelingsFilter} && target_type = "${targetType}" && ${targetField} = "${targetId}"`,
+        sort: '-created',
+      });
+
+      return records;
+    },
+    enabled: Boolean(targetId),
   });
 };
 
@@ -59,3 +113,5 @@ export const useCreateFeeling = () => {
     },
   });
 };
+
+export const useFeelings = useFeelingsList;

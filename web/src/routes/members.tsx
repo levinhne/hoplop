@@ -6,7 +6,7 @@ import {
   useMatchRoute,
 } from "@tanstack/react-router";
 import { useClasses } from "@/hooks/useClasses";
-import { useMembers } from "@/hooks/useMembers";
+import { useMembersList } from "@/hooks/useMembers";
 import { getFileUrl } from "@/lib/pocketbase";
 import { getMemberClassName } from "@/lib/members";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,11 +29,22 @@ export const Route = createFileRoute("/members")({
 
 function MembersPage() {
   const matchRoute = useMatchRoute();
-  const { data: members, isLoading, error } = useMembers();
+  const isDetailRoute = Boolean(matchRoute({ to: "/members/$memberId" }));
+
+  if (isDetailRoute) {
+    return <Outlet />;
+  }
+
+  return <MembersListPage />;
+}
+
+function MembersListPage() {
+  const { data: members, isLoading, error } = useMembersList({
+    random: true,
+  });
   const { data: classGroups, isLoading: isLoadingClasses } = useClasses();
   const [selectedClass, setSelectedClass] = useState("Tất cả");
   const [searchTerm, setSearchTerm] = useState("");
-  const isDetailRoute = Boolean(matchRoute({ to: "/members/$memberId" }));
 
   const classes = useMemo(() => {
     const uniqueClasses = new Set<string>();
@@ -66,10 +77,6 @@ function MembersPage() {
       return matchesClass && matchesName;
     });
   }, [members, searchTerm, selectedClass]);
-
-  if (isDetailRoute) {
-    return <Outlet />;
-  }
 
   if (error) {
     return (
