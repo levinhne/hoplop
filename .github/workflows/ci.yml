@@ -70,7 +70,7 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name == 'push' }}
-          tags: levinhne/hoplop:latest
+          tags: levinhne/khoa9yendong:latest
           build-args: |
             VITE_POCKETBASE_URL=https://khoa91yendong.io.vn/
           cache-from: type=gha
