@@ -114,8 +114,6 @@ function HomeComponent() {
           )}
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-16 bg-gradient-to-t from-reunion-paper/35 to-transparent" />
-
         <div className="section-container relative z-20 flex min-h-[100svh] flex-col justify-center pb-12 pt-24 md:pb-16 md:pt-32">
           <div className="max-w-4xl space-y-6 md:space-y-8">
             <div>
