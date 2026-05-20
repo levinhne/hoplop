@@ -215,24 +215,26 @@ function GalleryCard({
         </button>
       </DialogTrigger>
 
-      <DialogContent className="inline-flex w-auto max-w-[calc(100vw-1.5rem)] gap-0 overflow-hidden rounded-xl border-none bg-white p-0 shadow-2xl [&>button]:right-3 [&>button]:top-3 [&>button]:bg-white/90 [&>button]:text-reunion-ink [&>button]:shadow-sm">
-        <div className="flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden">
-          <div className="flex min-h-64 items-center justify-center bg-slate-950">
+      <DialogContent className="inline-flex w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] gap-0 overflow-hidden rounded-lg border-none bg-white p-0 shadow-2xl sm:w-auto sm:max-w-[calc(100vw-2rem)] sm:rounded-xl [&>button]:right-2 [&>button]:top-2 [&>button]:z-10 [&>button]:bg-white/90 [&>button]:text-reunion-ink [&>button]:shadow-sm sm:[&>button]:right-3 sm:[&>button]:top-3">
+        <div className="flex max-h-[calc(100dvh-1rem)] flex-col overflow-hidden sm:max-h-[calc(100dvh-2rem)]">
+          <div className="flex min-h-0 items-center justify-center bg-slate-950">
             {imageUrl ? (
               <img
                 src={imageUrl}
                 alt={caption}
-                className="block h-auto max-h-[calc(100vh-9.5rem)] max-w-[calc(100vw-1.5rem)] object-contain"
+                className="block h-auto max-h-[calc(100dvh-7.25rem)] w-auto max-w-full object-contain sm:max-h-[calc(100dvh-9.5rem)]"
               />
             ) : (
-              <div className="flex h-80 w-80 max-w-[calc(100vw-1.5rem)] items-center justify-center">
+              <div className="flex aspect-square w-full max-w-80 items-center justify-center">
                 <ImageIcon className="h-16 w-16 text-white/20" />
               </div>
             )}
           </div>
-          <div className="space-y-2 border-t border-slate-100 bg-white p-4 sm:p-5">
-            <span className="eyebrow">{category}</span>
-            <DialogTitle className="font-serif text-xl font-bold leading-snug text-reunion-ink sm:text-2xl">
+          <div className="max-h-28 space-y-1 overflow-y-auto border-t border-slate-100 bg-white p-3 sm:max-h-36 sm:space-y-2 sm:p-5">
+            <span className="eyebrow mb-1 text-[9px] sm:mb-3 sm:text-[10px]">
+              {category}
+            </span>
+            <DialogTitle className="font-serif text-lg font-bold leading-snug text-reunion-ink sm:text-2xl">
               {caption}
             </DialogTitle>
             <DialogDescription className="sr-only">
