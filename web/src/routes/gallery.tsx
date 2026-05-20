@@ -1,68 +1,72 @@
-import { useMemo, useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { useMemo, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import { Skeleton } from '@/components/ui/skeleton'
-import { getFileUrl } from '@/lib/pocketbase'
-import { useGalleryList } from '@/hooks/useGallery'
-import { cn } from '@/lib/utils'
-import { seo } from '@/lib/seo'
-import { ImageIcon, Images } from 'lucide-react'
-import type { GalleryItem } from '@/types'
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getFileUrl } from "@/lib/pocketbase";
+import { useGalleryList } from "@/hooks/useGallery";
+import { cn } from "@/lib/utils";
+import { seo } from "@/lib/seo";
+import { ImageIcon, Images } from "lucide-react";
+import type { GalleryItem } from "@/types";
 
-type GalleryFilter = 'all' | GalleryItem['category']
+type GalleryFilter = "all" | GalleryItem["category"];
 
-const categoryLabels: Record<GalleryItem['category'], string> = {
-  school: 'Sân trường',
-  reunion: 'Hội ngộ',
-  old_days: 'Ngày xưa',
-}
+const categoryLabels: Record<GalleryItem["category"], string> = {
+  school: "Sân trường",
+  reunion: "Hội ngộ",
+  old_days: "Ngày xưa",
+};
 
 const filterOptions: Array<{ value: GalleryFilter; label: string }> = [
-  { value: 'all', label: 'Tất cả' },
-  { value: 'school', label: 'Sân trường' },
-  { value: 'reunion', label: 'Hội ngộ' },
-  { value: 'old_days', label: 'Ngày xưa' },
-]
+  { value: "all", label: "Tất cả" },
+  { value: "school", label: "Sân trường" },
+  { value: "reunion", label: "Hội ngộ" },
+  { value: "old_days", label: "Ngày xưa" },
+];
 
-export const Route = createFileRoute('/gallery')({
+export const Route = createFileRoute("/gallery")({
   head: () => ({
     meta: seo({
-      title: 'Kỷ niệm',
-      description: 'Album ảnh kỷ niệm của lớp, gồm sân trường, ngày xưa và những lần hội ngộ.',
+      title: "Kỷ niệm",
+      description:
+        "Album ảnh kỷ niệm của lớp, gồm sân trường, ngày xưa và những lần hội ngộ.",
     }),
   }),
   component: GalleryPage,
-})
+});
 
 function GalleryPage() {
-  const { data: gallery, isLoading, error } = useGalleryList()
-  const [selectedCategory, setSelectedCategory] = useState<GalleryFilter>('all')
+  const { data: gallery, isLoading, error } = useGalleryList();
+  const [selectedCategory, setSelectedCategory] =
+    useState<GalleryFilter>("all");
 
   const visibleGallery = useMemo(() => {
-    if (!gallery) return []
-    if (selectedCategory === 'all') return gallery
+    if (!gallery) return [];
+    if (selectedCategory === "all") return gallery;
 
-    return gallery.filter((item) => item.category === selectedCategory)
-  }, [gallery, selectedCategory])
+    return gallery.filter((item) => item.category === selectedCategory);
+  }, [gallery, selectedCategory]);
 
   if (error) {
     return (
       <div className="section-container py-14 text-center">
         <div className="mx-auto max-w-md space-y-4 rounded-lg border border-red-100 bg-white p-7 shadow-sm">
           <Images className="mx-auto h-8 w-8 text-reunion-gold" />
-          <h1 className="font-serif text-2xl font-bold text-reunion-ink">Không tải được album kỷ niệm</h1>
+          <h1 className="font-serif text-2xl font-bold text-reunion-ink">
+            Không tải được album kỷ niệm
+          </h1>
           <p className="text-sm leading-relaxed text-slate-500">
             Vui lòng kiểm tra PocketBase và quyền xem collection `gallery`.
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -75,7 +79,8 @@ function GalleryPage() {
               Những khung hình còn ở lại
             </h1>
             <p className="max-w-2xl font-serif text-base italic leading-relaxed text-slate-500 md:text-lg">
-              Sân trường, chuyến đi cuối cấp và những lần hội ngộ được gom lại thành một cuốn album chung của lớp.
+              Sân trường, chuyến đi cuối cấp và những lần hội ngộ được gom lại
+              thành một cuốn album chung của lớp.
             </p>
           </div>
 
@@ -91,7 +96,9 @@ function GalleryPage() {
             <div className="max-w-xl space-y-3">
               <div className="flex items-center gap-3 text-reunion-gold">
                 <ImageIcon className="h-4 w-4" />
-                <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Thư viện ảnh</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em]">
+                  Thư viện ảnh
+                </span>
               </div>
               <p className="font-serif italic leading-relaxed text-slate-500">
                 Chọn từng nhóm ảnh để xem lại những lát cắt khác nhau của ký ức.
@@ -111,15 +118,22 @@ function GalleryPage() {
                     key={option.value}
                     type="button"
                     className={cn(
-                      'inline-flex h-10 items-center gap-2 rounded-md border px-4 text-[10px] font-bold uppercase tracking-widest transition',
+                      "inline-flex h-10 items-center gap-2 rounded-md border px-4 text-[10px] font-bold uppercase tracking-widest transition",
                       selectedCategory === option.value
-                        ? 'border-reunion-forest bg-reunion-forest text-white'
-                        : 'border-slate-200 bg-white text-slate-500 hover:border-reunion-gold hover:text-reunion-forest'
+                        ? "border-reunion-forest bg-reunion-forest text-white"
+                        : "border-slate-200 bg-white text-slate-500 hover:border-reunion-gold hover:text-reunion-forest"
                     )}
                     onClick={() => setSelectedCategory(option.value)}
                   >
                     {option.label}
-                    <span className={cn('text-[9px]', selectedCategory === option.value ? 'text-white/70' : 'text-slate-300')}>
+                    <span
+                      className={cn(
+                        "text-[9px]",
+                        selectedCategory === option.value
+                          ? "text-white/70"
+                          : "text-slate-300"
+                      )}
+                    >
                       {countGallery(gallery, option.value)}
                     </span>
                   </button>
@@ -133,7 +147,11 @@ function GalleryPage() {
           ) : visibleGallery.length ? (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {visibleGallery.map((item, index) => (
-                <GalleryCard key={item.id} item={item} featured={index % 5 === 0} />
+                <GalleryCard
+                  key={item.id}
+                  item={item}
+                  featured={index % 5 === 0}
+                />
               ))}
             </div>
           ) : (
@@ -142,24 +160,35 @@ function GalleryPage() {
         </div>
       </section>
     </div>
-  )
+  );
 }
 
-function GalleryCard({ item, featured }: { item: GalleryItem; featured: boolean }) {
-  const imageUrl = getFileUrl('gallery', item.id, item.image)
-  const category = categoryLabels[item.category] ?? 'Kỷ niệm'
-  const caption = item.caption || 'Ảnh kỷ niệm của lớp'
+function GalleryCard({
+  item,
+  featured,
+}: {
+  item: GalleryItem;
+  featured: boolean;
+}) {
+  const imageUrl = getFileUrl("gallery", item.id, item.image);
+  const category = categoryLabels[item.category] ?? "Kỷ niệm";
+  const caption = item.caption || "Ảnh kỷ niệm của lớp";
 
   return (
     <Dialog>
       <DialogTrigger asChild>
         <button
           className={cn(
-            'journal-card group cursor-pointer border-2 border-slate-50 bg-white text-left',
-            featured && 'sm:col-span-2'
+            "journal-card group cursor-pointer border-2 border-slate-50 bg-white text-left",
+            featured && "sm:col-span-2"
           )}
         >
-          <div className={cn('relative overflow-hidden bg-slate-100', featured ? 'aspect-[16/10]' : 'aspect-[4/3]')}>
+          <div
+            className={cn(
+              "relative overflow-hidden bg-slate-100",
+              featured ? "aspect-[16/10]" : "aspect-[4/3]"
+            )}
+          >
             {imageUrl ? (
               <img
                 src={imageUrl}
@@ -176,7 +205,9 @@ function GalleryCard({ item, featured }: { item: GalleryItem; featured: boolean 
             </div>
           </div>
           <div className="space-y-2 p-5">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-reunion-gold">{category}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-reunion-gold">
+              {category}
+            </p>
             <h3 className="font-serif text-lg font-bold leading-snug text-reunion-ink transition-colors group-hover:text-reunion-forest">
               {caption}
             </h3>
@@ -211,7 +242,7 @@ function GalleryCard({ item, featured }: { item: GalleryItem; featured: boolean 
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 function GallerySkeleton() {
@@ -225,17 +256,17 @@ function GallerySkeleton() {
         </div>
       ))}
     </div>
-  )
+  );
 }
 
 function GalleryHeroPreview({
   gallery,
   isLoading,
 }: {
-  gallery: GalleryItem[] | undefined
-  isLoading?: boolean
+  gallery: GalleryItem[] | undefined;
+  isLoading?: boolean;
 }) {
-  const previewItems = gallery?.slice(0, 3) ?? []
+  const previewItems = gallery?.slice(0, 3) ?? [];
 
   return (
     <div className="soft-panel overflow-hidden p-3">
@@ -251,13 +282,13 @@ function GalleryHeroPreview({
             <div
               key={item.id}
               className={cn(
-                'relative overflow-hidden rounded-md bg-slate-100 shadow-sm',
-                index === 1 ? 'mt-5 aspect-[3/4]' : 'aspect-[3/4]'
+                "relative overflow-hidden rounded-md bg-slate-100 shadow-sm",
+                index === 1 ? "mt-5 aspect-[3/4]" : "aspect-[3/4]"
               )}
             >
               <img
-                src={getFileUrl('gallery', item.id, item.image)}
-                alt={item.caption || 'Kỷ niệm'}
+                src={getFileUrl("gallery", item.id, item.image)}
+                alt={item.caption || "Kỷ niệm"}
                 className="h-full w-full object-cover grayscale-[0.15]"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-reunion-ink/45 to-transparent" />
@@ -273,11 +304,20 @@ function GalleryHeroPreview({
         </div>
       )}
     </div>
-  )
+  );
 }
 
-function EmptyGallery({ selectedCategory }: { selectedCategory: GalleryFilter }) {
-  const category = selectedCategory === 'all' ? '' : ` thuộc nhóm ${filterOptions.find((item) => item.value === selectedCategory)?.label}`
+function EmptyGallery({
+  selectedCategory,
+}: {
+  selectedCategory: GalleryFilter;
+}) {
+  const category =
+    selectedCategory === "all"
+      ? ""
+      : ` thuộc nhóm ${
+          filterOptions.find((item) => item.value === selectedCategory)?.label
+        }`;
 
   return (
     <div className="py-14 text-center">
@@ -288,12 +328,15 @@ function EmptyGallery({ selectedCategory }: { selectedCategory: GalleryFilter })
         </p>
       </div>
     </div>
-  )
+  );
 }
 
-function countGallery(gallery: GalleryItem[] | undefined, category: GalleryFilter) {
-  if (!gallery) return 0
-  if (category === 'all') return gallery.length
+function countGallery(
+  gallery: GalleryItem[] | undefined,
+  category: GalleryFilter
+) {
+  if (!gallery) return 0;
+  if (category === "all") return gallery.length;
 
-  return gallery.filter((item) => item.category === category).length
+  return gallery.filter((item) => item.category === category).length;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -6,7 +6,7 @@ import { getMemberClassName } from "@/lib/members";
 import { getFileUrl } from "@/lib/pocketbase";
 import { normalizeText } from "@/lib/utils";
 import { useFeelingsPreview } from "@/hooks/useFeelings";
-import { useGalleryPreview } from "@/hooks/useGallery";
+import { useGalleryList, useGalleryPreview } from "@/hooks/useGallery";
 import { useMembersPreview } from "@/hooks/useMembers";
 import { useStats } from "@/hooks/useStats";
 import { useTeachersPreview } from "@/hooks/useTeachers";
@@ -17,7 +17,7 @@ import {
   MessageSquareQuote,
   PenLine,
 } from "lucide-react";
-import type { Feeling, Member, Teacher } from "@/types";
+import type { Feeling, GalleryItem, Member, Teacher } from "@/types";
 
 const heroTypingLines = [
   "Ngày ấy chúng ta ngồi chung một lớp.",
@@ -67,6 +67,12 @@ function HomeComponent() {
     useFeelingsPreview(12);
   const { data: sliderImages, isLoading: isLoadingGallery } =
     useGalleryPreview(6);
+  const { data: homeGallery, isLoading: isLoadingHomeGallery } =
+    useGalleryList();
+  const homeGalleryItems = useMemo(
+    () => (homeGallery ?? []).slice(0, 6),
+    [homeGallery]
+  );
   const typedHeroLine = useTypingLoop(heroTypingLines);
   const isMobileHero = useMediaQuery("(max-width: 767px)");
   const showHeroActionsAfterScroll = useShowAfterScrollRatio(1 / 5);
@@ -277,6 +283,39 @@ function HomeComponent() {
             </div>
           </div>
         )}
+      </section>
+
+      <section className="border-y border-slate-100 bg-white/60 content-section">
+        <div className="section-container">
+          <SectionHeader
+            eyebrow="Album kỷ niệm"
+            title="Những khung hình mới nhất"
+            description="Một vài lát cắt từ album chung, để mỗi lần ghé trang chủ vẫn thấy kỷ niệm đang được nối dài."
+            to="/gallery"
+            action="Xem album"
+          />
+
+          {isLoadingHomeGallery ? (
+            <GalleryPreviewSkeleton />
+          ) : homeGalleryItems.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {homeGalleryItems.map((item, index) => (
+                <GalleryPreviewCard
+                  key={item.id}
+                  item={item}
+                  featured={index === 0}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-slate-200 bg-white/70 p-6 text-center md:p-8">
+              <ImagePlus className="mx-auto mb-4 h-8 w-8 text-slate-300 md:h-10 md:w-10" />
+              <p className="font-serif text-sm italic text-slate-400 md:text-base">
+                Chưa có ảnh kỷ niệm nào được cập nhật.
+              </p>
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="py-6 md:py-8">
@@ -542,7 +581,7 @@ function SectionHeader({
   eyebrow: string;
   title: string;
   description: string;
-  to: "/members" | "/teachers" | "/feelings";
+  to: "/members" | "/teachers" | "/feelings" | "/gallery";
   action: string;
 }) {
   return (
@@ -591,6 +630,25 @@ function PreviewSkeleton() {
   );
 }
 
+function GalleryPreviewSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {[1, 2, 3, 4, 5, 6].map((item) => (
+        <div
+          key={item}
+          className="overflow-hidden rounded-lg border border-slate-200/70 bg-white"
+        >
+          <Skeleton className="aspect-[4/3] w-full rounded-none" />
+          <div className="space-y-3 p-5">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-6 w-4/5" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function FeelingMarqueeSkeleton() {
   return (
     <div className="space-y-4 md:space-y-5">
@@ -610,6 +668,43 @@ function FeelingMarqueeSkeleton() {
         </div>
       ))}
     </div>
+  );
+}
+
+function GalleryPreviewCard({
+  item,
+  featured,
+}: {
+  item: GalleryItem;
+  featured: boolean;
+}) {
+  const imageUrl = getFileUrl("gallery", item.id, item.image);
+  const caption = item.caption || "Ảnh kỷ niệm của lớp";
+
+  return (
+    <Link
+      to="/gallery"
+      className={`journal-card group block border-2 border-slate-50 text-left ${
+        featured ? "sm:col-span-2 lg:col-span-1" : ""
+      }`}
+    >
+      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={caption}
+            className="h-full w-full object-cover grayscale-[0.15] transition-all duration-500 group-hover:scale-105 group-hover:grayscale-0"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <ImagePlus className="h-12 w-12 text-slate-200" />
+          </div>
+        )}
+        <div className="absolute top-4 right-4 border border-slate-100 bg-white/90 px-2 py-1 text-[8px] font-bold uppercase tracking-widest text-reunion-forest opacity-0 shadow-sm backdrop-blur transition-opacity group-hover:opacity-100">
+          Xem album
+        </div>
+      </div>
+    </Link>
   );
 }
 
