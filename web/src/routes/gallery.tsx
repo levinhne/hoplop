@@ -184,29 +184,29 @@ function GalleryCard({ item, featured }: { item: GalleryItem; featured: boolean 
         </button>
       </DialogTrigger>
 
-      <DialogContent className="max-h-[92vh] max-w-5xl overflow-hidden rounded-xl border-none p-0 shadow-2xl">
-        <div className="grid max-h-[92vh] grid-cols-1 overflow-y-auto bg-white lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="flex min-h-[320px] items-center justify-center bg-slate-950">
+      <DialogContent className="inline-flex w-auto max-w-[calc(100vw-1.5rem)] gap-0 overflow-hidden rounded-xl border-none bg-white p-0 shadow-2xl [&>button]:right-3 [&>button]:top-3 [&>button]:bg-white/90 [&>button]:text-reunion-ink [&>button]:shadow-sm">
+        <div className="flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden">
+          <div className="flex min-h-64 items-center justify-center bg-slate-950">
             {imageUrl ? (
-              <img src={imageUrl} alt={caption} className="max-h-[78vh] w-full object-contain" />
+              <img
+                src={imageUrl}
+                alt={caption}
+                className="block h-auto max-h-[calc(100vh-9.5rem)] max-w-[calc(100vw-1.5rem)] object-contain"
+              />
             ) : (
-              <ImageIcon className="h-16 w-16 text-white/20" />
+              <div className="flex h-80 w-80 max-w-[calc(100vw-1.5rem)] items-center justify-center">
+                <ImageIcon className="h-16 w-16 text-white/20" />
+              </div>
             )}
           </div>
-          <div className="space-y-5 p-7 lg:p-8">
-            <div className="space-y-3">
-              <span className="eyebrow">{category}</span>
-              <DialogTitle className="font-serif text-3xl font-bold leading-tight text-reunion-ink">
-                {caption}
-              </DialogTitle>
-              <DialogDescription className="sr-only">
-                Ảnh kỷ niệm thuộc nhóm {category}
-              </DialogDescription>
-              <div className="h-1 w-12 bg-reunion-gold"></div>
-            </div>
-            <p className="font-serif italic leading-relaxed text-slate-500">
-              Một khung hình trong album kỷ niệm chung của lớp.
-            </p>
+          <div className="space-y-2 border-t border-slate-100 bg-white p-4 sm:p-5">
+            <span className="eyebrow">{category}</span>
+            <DialogTitle className="font-serif text-xl font-bold leading-snug text-reunion-ink sm:text-2xl">
+              {caption}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Ảnh kỷ niệm thuộc nhóm {category}
+            </DialogDescription>
           </div>
         </div>
       </DialogContent>
