@@ -66,7 +66,7 @@ function HomeComponent() {
   const { data: latestFeelings, isLoading: isLoadingFeelings } =
     useFeelingsPreview(12);
   const { data: sliderImages, isLoading: isLoadingGallery } =
-    useGalleryPreview(6);
+    useGalleryPreview(10);
   const { data: homeGallery, isLoading: isLoadingHomeGallery } =
     useGalleryList();
   const homeGalleryItems = useMemo(
